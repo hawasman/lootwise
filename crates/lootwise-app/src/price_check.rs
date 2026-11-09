@@ -306,7 +306,8 @@ fn card_place(displays: &[Display], pointer: &mut dyn PointerLocator) -> CardPla
     let chosen = card_display(displays, under.as_ref(), at).map(|i| &displays[i]);
     CardPlace {
         pointer: at,
-        // On a display Rune doesn't list, the card goes to the primary at the same spot.
+        // On a display Rune doesn't list, the card goes to the primary (on Wayland, where Rune
+        // marks none primary, to the compositor's choice of output) at the same spot.
         origin: under
             .map(|d| d.origin)
             .or(chosen.map(|d| d.position))
