@@ -178,15 +178,19 @@ fn rarity_color(rarity: Rarity, k: &Kit) -> Color {
     }
 }
 
-/// A price with as many decimals as it needs to be readable: `1.94`, `17.5`, `602`.
+/// A price with as many decimals as it needs to be readable: `1.94`, `17.5`, `602`, and two
+/// significant digits below 1, so a chaos orb in divines reads `0.002`, not `0`.
 fn amount(value: f64) -> String {
-    let text = if value >= 100.0 {
-        format!("{value:.0}")
+    let decimals = if value >= 100.0 {
+        0
     } else if value >= 10.0 {
-        format!("{value:.1}")
+        1
+    } else if value >= 1.0 || value <= 0.0 {
+        2
     } else {
-        format!("{value:.2}")
+        (1 - value.log10().floor() as i32).clamp(2, 6) as usize
     };
+    let text = format!("{value:.decimals$}");
     if text.contains('.') {
         text.trim_end_matches('0').trim_end_matches('.').to_owned()
     } else {
@@ -526,6 +530,12 @@ mod tests {
     fn amounts_keep_only_the_decimals_they_need() {
         assert_eq!(amount(1.94), "1.94");
         assert_eq!(amount(0.333), "0.33");
+        assert_eq!(
+            amount(1.0 / 498.2),
+            "0.002",
+            "a chaos orb in divines is not 0"
+        );
+        assert_eq!(amount(36.03 / 498.2), "0.072");
         assert_eq!(amount(2.0), "2");
         assert_eq!(amount(17.5), "17.5");
         assert_eq!(amount(602.6), "603");
