@@ -1,0 +1,23 @@
+Item Class: Skill Gems
+Rarity: Gem
+Cleave of Rage
+--------
+Attack, AoE, Melee, Slam
+Level: 20 (Max)
+Cost: 8 Mana
+Attack Speed: 80% of base
+Attack Damage: 158.4% of base
+Quality: +20% (augmented)
+--------
+Requirements:
+Level: 70
+Str: 155
+Dex: 108
+--------
+The character swings their weapon (or both weapons if dual wielding) in an arc towards a target. While dual wielding, the damage is dealt by both weapons simultaneously. Gains Rage on hit.
+--------
+Experience: 1/1
+--------
+Place into an item socket of the right colour to gain this skill. Right click to remove from a socket.
+--------
+Corrupted

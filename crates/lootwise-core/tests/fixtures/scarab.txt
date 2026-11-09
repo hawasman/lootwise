@@ -1,0 +1,10 @@
+Item Class: Map Fragments
+Rarity: Normal
+Ambush Scarab of Containment
+--------
+Stack Size: 3/20
+--------
+Area contains 4 additional Strongboxes
+Strongboxes in Area are Corrupted
+--------
+Can be used in a personal Map Device to add modifiers to a Map.
