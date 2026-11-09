@@ -311,6 +311,39 @@ fn an_unreachable_relay_leaves_the_cached_prices_with_their_age() {
 }
 
 #[test]
+fn a_league_the_relay_does_not_carry_has_prices_unavailable() {
+    let cache = tempfile::tempdir().unwrap();
+    let league = League::new("Standrad");
+    let feed = RelayFeed::start(
+        RelaySource::Folder(fixture_root()),
+        cache.path().to_owned(),
+        league.clone(),
+    )
+    .unwrap();
+    assert!(!feed.covers(&league));
+
+    let engine = Engine::new(feed, FixedClock(at("2026-11-09T12:40:00Z")));
+    let text = "Item Class: Stackable Currency\nRarity: Currency\nDivine Orb\n--------\nStack Size: 1/20\n--------\n";
+    assert!(matches!(
+        engine.price_check(&league, text),
+        PriceCheck::PricesUnavailable { .. }
+    ));
+}
+
+#[test]
+fn a_synced_league_is_covered_and_others_are_not() {
+    let (cache, _) = synced_book();
+    let feed = RelayFeed::start(
+        RelaySource::Folder(fixture_root()),
+        cache.path().to_owned(),
+        standard(),
+    )
+    .unwrap();
+    assert!(feed.covers(&standard()));
+    assert!(!feed.covers(&League::new("Settlers")));
+}
+
+#[test]
 fn a_league_name_with_spaces_is_url_encoded() {
     let relay = serve(fixture_root());
     let cache = tempfile::tempdir().unwrap();

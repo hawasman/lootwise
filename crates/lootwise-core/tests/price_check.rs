@@ -47,6 +47,10 @@ impl FakeFeed {
 }
 
 impl PriceFeed for FakeFeed {
+    fn covers(&self, league: &League) -> bool {
+        self.prices.keys().any(|(l, _)| l == league)
+    }
+
     fn price(&self, league: &League, item: &CommodityItem) -> Option<PriceEntry> {
         self.prices.get(&(league.clone(), item.clone())).cloned()
     }
@@ -412,6 +416,24 @@ fn prices_and_divine_rate_come_only_from_the_checked_league() {
         engine.price_check(&standard, CURRENCY_STACK),
         PriceCheck::NoPrice { .. }
     ));
+}
+
+#[test]
+fn a_league_the_feed_does_not_cover_has_prices_unavailable_not_no_price() {
+    let standard = League::new("Standard");
+    let feed = FakeFeed::default().with_price(&standard, divine_orb(), entry(200.0, 100, t0()));
+    let engine = Engine::new(feed, FixedClock(t0()));
+
+    let check = engine.price_check(&League::new("Standrad"), CURRENCY_STACK);
+    let PriceCheck::PricesUnavailable { commodity, .. } = check else {
+        panic!("expected PricesUnavailable, got {check:?}");
+    };
+    assert_eq!(commodity, divine_orb());
+    assert_eq!(
+        engine.price_check(&League::new("Standrad"), RARE),
+        engine.price_check(&standard, RARE),
+        "a non-Commodity Item reads the same in any League"
+    );
 }
 
 #[test]

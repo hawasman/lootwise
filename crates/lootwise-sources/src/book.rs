@@ -76,6 +76,11 @@ impl PriceBook {
         found.map(|(_, entry)| entry.clone())
     }
 
+    /// Whether the book holds no prices, e.g. for a League the relay doesn't carry.
+    pub fn is_empty(&self) -> bool {
+        self.named.is_empty() && self.gems.is_empty() && self.uniques.is_empty()
+    }
+
     pub fn divine_rate(&self) -> Option<f64> {
         self.divine_rate.map(|(_, rate)| rate)
     }

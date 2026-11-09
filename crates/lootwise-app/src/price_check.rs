@@ -15,6 +15,8 @@ use rune_kit::Kit;
 pub const NOT_AN_ITEM: &str = "Not a Path of Exile item";
 pub const NOT_A_COMMODITY_ITEM: &str = "Not a Commodity Item: valuing it needs a Live Search";
 pub const NO_PRICE: &str = "No price for this item in the League";
+pub const PRICES_UNAVAILABLE: &str =
+    "Prices unavailable for this League (check LOOTWISE_LEAGUE and the relay)";
 pub const LOW_CONFIDENCE: &str = "Low confidence";
 /// The card's width, and the height kept clear for it at the bottom of the display, in points.
 /// Also the overlay's nominal size; its full-screen placement overrides it.
@@ -284,6 +286,9 @@ fn card_body(card: &CardContent, k: &Kit) -> (Color, El) {
         CardContent::Checked(PriceCheck::Valued { item, valuation }) => {
             with_item(item, valuation_lines(valuation, k))
         }
+        CardContent::Checked(PriceCheck::PricesUnavailable { item, .. }) => {
+            with_item(item, note("prices-unavailable", PRICES_UNAVAILABLE))
+        }
         CardContent::Checked(PriceCheck::NoPrice { item, .. }) => {
             with_item(item, note("no-price", NO_PRICE))
         }
@@ -372,6 +377,9 @@ mod tests {
     /// at 200 chaos per divine.
     struct FakeFeed;
     impl PriceFeed for FakeFeed {
+        fn covers(&self, league: &League) -> bool {
+            league.name() == "Standard"
+        }
         fn price(&self, league: &League, item: &CommodityItem) -> Option<PriceEntry> {
             if league.name() != "Standard" {
                 return None;
@@ -401,19 +409,25 @@ mod tests {
         }
     }
 
-    fn pricer() -> Pricer {
+    /// The engine pricing in `league` against [`FakeFeed`], which only covers `Standard`.
+    fn pricer_in(league: &str) -> Pricer {
         let engine = Engine::new(FakeFeed, FixedClock);
-        let league = League::new("Standard");
+        let league = League::new(league);
         Box::new(move |text| engine.price_check(&league, text))
+    }
+
+    fn pricer() -> Pricer {
+        pricer_in("Standard")
     }
 
     /// The overlay as its host runs it, with `keys` in place of the game's input.
     fn runtime(
         clipboard: &MemoryClipboard,
         keys: Box<dyn KeySender>,
+        pricer: Pricer,
     ) -> Runtime<PriceCheckOverlay> {
         let mut rt = Runtime::new(
-            PriceCheckOverlay::new(keys, Box::new(FakePointer), pricer()),
+            PriceCheckOverlay::new(keys, Box::new(FakePointer), pricer),
             view,
             (1920.0, 1080.0),
             Env::new(true, 1.0),
@@ -424,17 +438,22 @@ mod tests {
         rt
     }
 
-    fn overlay(
-        clipboard: &MemoryClipboard,
-        copies: &'static str,
-    ) -> (Runtime<PriceCheckOverlay>, Rc<Cell<u32>>) {
+    fn game(clipboard: &MemoryClipboard, copies: &'static str) -> (Box<FakeGame>, Rc<Cell<u32>>) {
         let presses = Rc::new(Cell::new(0));
         let game = FakeGame {
             clipboard: clipboard.clone(),
             copies,
             presses: presses.clone(),
         };
-        (runtime(clipboard, Box::new(game)), presses)
+        (Box::new(game), presses)
+    }
+
+    fn overlay(
+        clipboard: &MemoryClipboard,
+        copies: &'static str,
+    ) -> (Runtime<PriceCheckOverlay>, Rc<Cell<u32>>) {
+        let (game, presses) = game(clipboard, copies);
+        (runtime(clipboard, game, pricer()), presses)
     }
 
     /// Frames for `seconds`, polling before each as the overlay host does.
@@ -527,6 +546,21 @@ mod tests {
     }
 
     #[test]
+    fn a_league_without_prices_says_prices_are_unavailable() {
+        let clipboard = rune::clipboard::memory();
+        let (game, _) = game(&clipboard, DIVINE);
+        let mut rt = runtime(&clipboard, game, pricer_in("Standrad"));
+        press_ctrl_d(&mut rt);
+        assert_eq!(text_of(&rt, "item-name").as_deref(), Some("Divine Orb"));
+        assert_eq!(
+            text_of(&rt, "prices-unavailable").as_deref(),
+            Some(PRICES_UNAVAILABLE)
+        );
+        assert_eq!(text_of(&rt, "no-price"), None);
+        assert_eq!(text_of(&rt, "chaos"), None);
+    }
+
+    #[test]
     fn amounts_keep_only_the_decimals_they_need() {
         assert_eq!(amount(1.94), "1.94");
         assert_eq!(amount(0.333), "0.33");
@@ -581,7 +615,7 @@ mod tests {
                 Ok(())
             }
         }
-        let mut rt = runtime(&clipboard, Box::new(Nothing));
+        let mut rt = runtime(&clipboard, Box::new(Nothing), pricer());
         press_ctrl_d(&mut rt);
         assert_eq!(text_of(&rt, "not-an-item").as_deref(), Some(NOT_AN_ITEM));
         assert_eq!(

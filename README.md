@@ -23,7 +23,7 @@ cargo test
 
 ## Running the proof of concept on Linux
 
-Ctrl+D over a Commodity Item in the game shows its Valuation in an overlay beside the pointer: chaos and divine value, listing count (poe.ninja's Currency Exchange prices have none), price age and source, marked **Low confidence** when there are fewer than 10 listings or the prices are over an hour old. Other items show "Not a Commodity Item" (they would need a Live Search, not built yet) or "No price".
+Ctrl+D over a Commodity Item in the game shows its Valuation in an overlay beside the pointer: chaos and divine value, listing count (poe.ninja's Currency Exchange prices have none), price age and source, marked **Low confidence** when there are fewer than 10 listings or the prices are over an hour old. Other items show "Not a Commodity Item" (they would need a Live Search, not built yet) or "No price". If the relay has no prices for the configured League at all, every Commodity Item shows "Prices unavailable for this League".
 
 Tested setup: KDE Plasma on Wayland, Path of Exile running under Proton (so the game is an XWayland window).
 

@@ -9,7 +9,8 @@ let engine = Engine::new(feed, clock); // feed: impl PriceFeed, clock: impl Cloc
 match engine.price_check(&League::new("Settlers"), clipboard_text) {
     PriceCheck::NotAnItem => {}                       // not PoE1 item text
     PriceCheck::NotACommodityItem { item } => {}      // would need a Live Search
-    PriceCheck::NoPrice { item, commodity } => {}     // feed has no price in this League
+    PriceCheck::PricesUnavailable { item, commodity } => {} // feed has no prices for this League at all
+    PriceCheck::NoPrice { item, commodity } => {}     // feed has no price for it in this League
     PriceCheck::Valued { item, valuation } => {}
 }
 ```
@@ -20,7 +21,7 @@ match engine.price_check(&League::new("Settlers"), clipboard_text) {
 
 ## Ports
 
-- `PriceFeed`: `price(league, commodity) -> Option<PriceEntry>` and `divine_rate(league) -> Option<f64>` (chaos per divine). A `PriceEntry` is one normalised price: chaos value, listing count (`None` when the source has none), fetch time (when the feed last fetched or confirmed it) and source. Every call is scoped to one League; prices are never compared across Leagues. Adapters (the price relay, later Plugins) implement this trait.
+- `PriceFeed`: `covers(league) -> bool` (whether it has any prices for the League; a Commodity Item in an uncovered League is `PricesUnavailable`, not `NoPrice`), `price(league, commodity) -> Option<PriceEntry>` and `divine_rate(league) -> Option<f64>` (chaos per divine). A `PriceEntry` is one normalised price: chaos value, listing count (`None` when the source has none), fetch time (when the feed last fetched or confirmed it) and source. Every call is scoped to one League; prices are never compared across Leagues. Adapters (the price relay, later Plugins) implement this trait.
 - `Clock`: `now() -> SystemTime`.
 
 ### Mapping the relayed poe.ninja files

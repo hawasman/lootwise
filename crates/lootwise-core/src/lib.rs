@@ -46,6 +46,10 @@ pub struct PriceEntry {
 
 /// Port: aggregated market prices, scoped to one League per call.
 pub trait PriceFeed {
+    /// Whether the feed has prices for `league` at all. A League it doesn't cover gives
+    /// [`PriceCheck::PricesUnavailable`] rather than a missing price per item.
+    fn covers(&self, league: &League) -> bool;
+
     /// The price of `item` in `league`, or `None` when the feed has no price for it.
     fn price(&self, league: &League, item: &CommodityItem) -> Option<PriceEntry>;
 
@@ -92,6 +96,11 @@ pub enum PriceCheck {
     NotACommodityItem {
         item: Item,
     },
+    /// A Commodity Item, but the feed has no prices for this League at all.
+    PricesUnavailable {
+        item: Item,
+        commodity: CommodityItem,
+    },
     /// A Commodity Item the feed has no price for in this League.
     NoPrice {
         item: Item,
@@ -122,6 +131,9 @@ impl<F: PriceFeed, C: Clock> Engine<F, C> {
         let Some(commodity) = CommodityItem::classify(&item) else {
             return PriceCheck::NotACommodityItem { item };
         };
+        if !self.feed.covers(league) {
+            return PriceCheck::PricesUnavailable { item, commodity };
+        }
         let Some(entry) = self.feed.price(league, &commodity) else {
             return PriceCheck::NoPrice { item, commodity };
         };

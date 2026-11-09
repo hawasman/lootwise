@@ -82,6 +82,17 @@ impl RelayFeed {
 }
 
 impl PriceFeed for RelayFeed {
+    /// The feed's League once the cache holds prices for it: not before the first sync of a
+    /// fresh install, and never for a League the relay doesn't carry.
+    fn covers(&self, league: &League) -> bool {
+        *league == self.league
+            && !self
+                .book
+                .read()
+                .unwrap_or_else(|e| e.into_inner())
+                .is_empty()
+    }
+
     fn price(&self, league: &League, item: &CommodityItem) -> Option<PriceEntry> {
         if *league != self.league {
             return None;
