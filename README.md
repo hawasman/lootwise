@@ -30,7 +30,7 @@ Tested setup: KDE Plasma on Wayland, Path of Exile running under Proton (so the 
 
 ### Known platform limits
 
-- **Esc needs a click first.** The overlay never takes the keyboard on its own, so the game keeps focus while the card is open. Esc reaches the card only after you click it; Ctrl+D always closes it.
+- **Esc needs a click first.** The overlay never takes the keyboard on its own, so the game keeps focus while the card is open. Esc reaches the card only after you click it; Ctrl+D always closes it. (Grabbing Esc as a global shortcut while the card is open is not done: on Wayland it goes through the portal's consent dialog.)
 - **The copy keystroke goes through XWayland.** `enigo` sends Ctrl+C with XTEST on the X display (`DISPLAY` must be set), which reaches the game because it runs under XWayland. A Wayland-native game would not receive it. XWayland built with libei may route it through the input-capture portal and ask for permission.
 - **Pointer position comes from XWayland too.** It is right while the pointer is over the game (an X window). With KDE's XWayland scaling set to "Apply scaling themselves" (the default) the card lands beside the pointer at any scale; with "Scaled by the system" on a scaled display it lands off by the scale factor.
 - **Wayland overlays use the primary display.** Wayland hides the pointer from Rune, so the overlay opens on the primary display's layer; on a multi-display setup with the game on another display the card shows on the primary one. X11 sessions and Windows pick the display under the pointer.

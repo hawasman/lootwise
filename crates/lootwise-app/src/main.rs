@@ -56,16 +56,20 @@ fn main() {
     ))
     .windowless();
     let overlay = app.overlay(
-        OverlaySpec::new("lootwise-price-check", (320.0, 140.0), price_check::view)
-            .options(OverlayOptions {
-                placement: Some(OverlayPlacement::FullScreen),
-                display: DisplayTarget::UnderPointer,
-                keys: KeyPolicy::OnDemand,
-                input: OverlayInput::Regions,
-                ..OverlayOptions::default()
-            })
-            .poll(price_check::poll)
-            .on_key(price_check::on_key),
+        OverlaySpec::new(
+            "lootwise-price-check",
+            price_check::CARD_SIZE,
+            price_check::view,
+        )
+        .options(OverlayOptions {
+            placement: Some(OverlayPlacement::FullScreen),
+            display: DisplayTarget::UnderPointer,
+            keys: KeyPolicy::OnDemand,
+            input: OverlayInput::Regions,
+            ..OverlayOptions::default()
+        })
+        .poll(price_check::poll)
+        .on_key(price_check::on_key),
         PriceCheck::new(input(), input()),
     );
     let surface = overlay.clone();

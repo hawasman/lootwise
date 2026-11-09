@@ -13,22 +13,23 @@ use crate::header::{ItemHeader, parse_header};
 
 pub const NOT_AN_ITEM: &str = "Not a Path of Exile item";
 /// The card's width, and the height kept clear for it at the bottom of the display, in points.
-const CARD_SIZE: (f32, f32) = (320.0, 140.0);
+/// Also the overlay's nominal size; its full-screen placement overrides it.
+pub const CARD_SIZE: (f32, f32) = (320.0, 140.0);
 /// The card's offset from the pointer, in points.
 const POINTER_GAP: f32 = 16.0;
 
 /// What the card shows.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Card {
+pub enum CardContent {
     Item(ItemHeader),
     NotAnItem,
     /// The copy keystroke couldn't be sent.
     Failed(String),
 }
 
-impl Card {
+impl CardContent {
     fn from_clipboard(text: &str) -> Self {
-        parse_header(text).map_or(Card::NotAnItem, Card::Item)
+        parse_header(text).map_or(CardContent::NotAnItem, CardContent::Item)
     }
 }
 
@@ -37,8 +38,8 @@ pub struct PriceCheck {
     keys: Box<dyn KeySender>,
     pointer: Box<dyn PointerLocator>,
     copy: ClipboardCopy<ClipboardContent>,
-    card: Option<Card>,
-    /// Global desktop pixels, read when the card opened.
+    card: Option<CardContent>,
+    /// Global desktop pixels, read when the player pressed Ctrl+D.
     anchor: Option<(i32, i32)>,
     /// The overlay's rect in global points, from `on_screen_layout`.
     screen: [f32; 4],
@@ -64,8 +65,7 @@ impl PriceCheck {
         self.surface = Some(surface);
     }
 
-    fn show(&mut self, card: Card) {
-        self.anchor = self.pointer.pointer();
+    fn show(&mut self, card: CardContent) {
         self.card = Some(card);
         if let Some(surface) = &self.surface {
             surface.show();
@@ -89,6 +89,8 @@ pub fn shortcut(s: &mut PriceCheck, tx: &mut Tx) {
     if !s.copy.begin() {
         return;
     }
+    // Before the copy's delays, so a mouse moved meanwhile doesn't drag the card off the item.
+    s.anchor = s.pointer.pointer();
     tx.read_clipboard(|s: &mut PriceCheck, saved, tx| {
         if let Some(due) = s.copy.saved(saved.clone(), tx.clock()) {
             tx.copy("");
@@ -109,13 +111,13 @@ pub fn poll(s: &mut PriceCheck, clock: f64, tx: &mut Tx) -> bool {
             tx.read_clipboard(|s: &mut PriceCheck, copied, tx| {
                 let Some(saved) = s.copy.read() else { return };
                 tx.copy_rich(saved);
-                s.show(Card::from_clipboard(copied.text()));
+                s.show(CardContent::from_clipboard(copied.text()));
             });
             false
         }
         Tick::Failed { restore, error } => {
             tx.copy_rich(restore);
-            s.show(Card::Failed(error.to_string()));
+            s.show(CardContent::Failed(error.to_string()));
             true
         }
     }
@@ -173,9 +175,9 @@ fn rarity_color(rarity: &str, k: &Kit) -> Color {
     }
 }
 
-fn card_body(card: &Card, k: &Kit) -> (Color, El) {
+fn card_body(card: &CardContent, k: &Kit) -> (Color, El) {
     match card {
-        Card::Item(item) => {
+        CardContent::Item(item) => {
             let color = rarity_color(&item.rarity, k);
             let mut body = col().gap(4.0).child(
                 text(item.rarity.clone())
@@ -194,14 +196,14 @@ fn card_body(card: &Card, k: &Kit) -> (Color, El) {
             }
             (color, body)
         }
-        Card::NotAnItem => (
+        CardContent::NotAnItem => (
             k.c.icon_muted,
             text(NOT_AN_ITEM)
                 .key("not-an-item")
                 .font(k.ty.body)
                 .color(k.c.text_base),
         ),
-        Card::Failed(error) => (
+        CardContent::Failed(error) => (
             k.c.icon_muted,
             text(error.clone())
                 .key("failed")
@@ -421,5 +423,35 @@ mod tests {
             (416.0, 316.0),
             "on a display right of the primary"
         );
+    }
+
+    #[test]
+    fn the_card_stays_where_ctrl_d_was_pressed_when_the_mouse_moves_during_the_copy() {
+        struct Mouse(Rc<Cell<(i32, i32)>>);
+        impl PointerLocator for Mouse {
+            fn pointer(&mut self) -> Option<(i32, i32)> {
+                Some(self.0.get())
+            }
+        }
+        let clipboard = rune::clipboard::memory();
+        let at = Rc::new(Cell::new((400, 300)));
+        let game = FakeGame {
+            clipboard: clipboard.clone(),
+            copies: SAMPLE,
+            presses: Rc::default(),
+        };
+        let mut rt = Runtime::new(
+            PriceCheck::new(Box::new(game), Box::new(Mouse(at.clone()))),
+            view,
+            (1920.0, 1080.0),
+            Env::new(true, 1.0),
+        );
+        rt.use_clipboard(&clipboard);
+        rt.frame(0.0);
+        rt.update(shortcut);
+        at.set((900, 700));
+        run(&mut rt, 0.5);
+        let card = rt.presented("card").map(|(rect, _)| (rect[0], rect[1]));
+        assert_eq!(card, Some((416.0, 316.0)));
     }
 }
