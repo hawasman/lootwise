@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lootwise designs</title>
+<style>
+  :root { --ground: #f4f4f2; --surface: #ffffff; --text: #141414; --muted: #5d5d5a; --border: #e3e3df; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: var(--ground); color: var(--text); }
+  header { display: flex; align-items: baseline; gap: 24px; padding: 20px 28px; }
+  h1 { font-size: 22px; margin: 0; }
+  nav { display: flex; gap: 4px; }
+  nav button { font: inherit; border: 1px solid var(--border); background: var(--surface); padding: 6px 12px; border-radius: 6px; cursor: pointer; color: var(--muted); }
+  nav button[aria-pressed="true"] { color: var(--text); border-color: var(--text); }
+  main { padding: 0 28px 28px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid.single { grid-template-columns: 1fr; }
+  figure { margin: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  figcaption { display: flex; justify-content: space-between; padding: 10px 14px; color: var(--muted); }
+  figcaption a { color: var(--text); }
+  .frame { position: relative; width: 100%; aspect-ratio: 1440 / 900; overflow: hidden; }
+  .frame.tall { aspect-ratio: 1440 / 1000; }
+  .frame.tall iframe { height: 1000px; }
+  figure.ref { grid-column: 1 / -1; }
+  .frame iframe { position: absolute; inset: 0; width: 1440px; height: 900px; border: 0; transform-origin: 0 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Lootwise designs</h1>
+  <nav aria-label="Layout">
+    <button type="button" data-view="all" aria-pressed="true">All</button>
+    <button type="button" data-view="ref">Reference</button>
+    <button type="button" data-view="1">One screen</button>
+    <button type="button" data-view="2">Navigator</button>
+    <button type="button" data-view="3">Session</button>
+    <button type="button" data-view="4">Market</button>
+  </nav>
+</header>
+<main>
+  <div class="grid" id="grid">
+    <figure data-id="ref" class="ref"><div class="frame tall"><iframe src="reference.html" title="Reference design"></iframe></div><figcaption>Reference design: the combined, finished app (Session, Portfolio, Holdings, overlay cards) <a href="reference.html">Open</a></figcaption></figure>
+    <figure data-id="1"><div class="frame"><iframe src="design-1-one-screen.html" title="Design 1: one screen"></iframe></div><figcaption>Design 1: one screen, command palette <a href="design-1-one-screen.html">Open</a></figcaption></figure>
+    <figure data-id="2"><div class="frame"><iframe src="design-2-navigator.html" title="Design 2: navigator"></iframe></div><figcaption>Design 2: sidebar navigator <a href="design-2-navigator.html">Open</a></figcaption></figure>
+    <figure data-id="3"><div class="frame"><iframe src="design-3-session.html" title="Design 3: session"></iframe></div><figcaption>Design 3: Session companion <a href="design-3-session.html">Open</a></figcaption></figure>
+    <figure data-id="4"><div class="frame"><iframe src="design-4-market.html" title="Design 4: market"></iframe></div><figcaption>Design 4: market terminal <a href="design-4-market.html">Open</a></figcaption></figure>
+  </div>
+</main>
+<script>
+  const grid = document.getElementById('grid');
+  const fit = () => grid.querySelectorAll('.frame').forEach(f => {
+    f.querySelector('iframe').style.transform = `scale(${f.clientWidth / 1440})`;
+  });
+  document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    const v = b.dataset.view;
+    grid.classList.toggle('single', v !== 'all');
+    grid.querySelectorAll('figure').forEach(f => f.hidden = v !== 'all' && f.dataset.id !== v);
+    fit();
+  }));
+  addEventListener('resize', fit); fit();
+</script>
+</body>
+</html>
