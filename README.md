@@ -31,14 +31,14 @@ Tested setup: KDE Plasma on Wayland, Path of Exile running under Proton (so the 
 
    ```sh
    cd relay && pnpm install
-   pnpm dev:mirror ~/lootwise-mirror --league Standard   # or your League, e.g. --league @current
+   pnpm dev:mirror ~/lootwise-mirror
    ```
 
-   Rerun it to refresh prices; Lootwise picks up changed categories within 15 minutes, or on its next start.
-2. Point Lootwise at the folder and start it from a terminal in your Plasma session:
+   With no `--league`, the mirror covers the Leagues the relay serves: the current challenge League and `Standard`. It prints one line per League, named as poe.ninja names it, e.g. `Allflame: 48/48 categories current`; `ls ~/lootwise-mirror/v1` lists them too. Use `--league <name>` to mirror only one. Rerun it to refresh prices; Lootwise picks up changed categories within 15 minutes, or on its next start.
+2. Point Lootwise at the folder, with `LOOTWISE_LEAGUE` set to the challenge League's name exactly as the mirror printed it (Lootwise defaults to `Standard`), and start it from a terminal in your Plasma session:
 
    ```sh
-   LOOTWISE_RELAY=~/lootwise-mirror LOOTWISE_LEAGUE=Standard cargo run --release -p lootwise-app
+   LOOTWISE_RELAY=~/lootwise-mirror LOOTWISE_LEAGUE=Allflame cargo run --release -p lootwise-app
    ```
 
    | Variable | Meaning |
