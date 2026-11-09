@@ -15,6 +15,7 @@ use std::time::Duration;
 use rune::ShortcutError;
 
 pub const APP_ID: &str = "io.github.hawasman.Lootwise";
+const DESKTOP_FILE: &str = "io.github.hawasman.Lootwise.desktop";
 /// The desktop file as shipped; its `Exec` is replaced by the running binary when installed.
 const DESKTOP_TEMPLATE: &str =
     include_str!("../../../packaging/linux/io.github.hawasman.Lootwise.desktop");
@@ -23,61 +24,50 @@ const SCOPE_WAIT: Duration = Duration::from_secs(2);
 const SCOPE_POLL: Duration = Duration::from_millis(20);
 const DBUS_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// Gives Lootwise its app id: installs the desktop file and enters the scope, logging what
-/// happened. Failures are logged and startup continues; registering Ctrl+D then fails and
-/// [`shortcut_advice`] says why.
+/// Gives Lootwise its app id: reports it to Rune (so its overlays carry it as their Wayland
+/// `app_id`), installs the desktop file and enters the scope, logging what happened. Failures
+/// are logged and startup continues; registering Ctrl+D then fails and
+/// [`explain_shortcut_errors`] says why.
 pub fn establish() {
     rune::set_app_id(APP_ID);
-    match desktop_dir() {
-        None => eprintln!(
-            "lootwise: no desktop file installed: neither XDG_DATA_HOME nor HOME is set"
-        ),
-        Some(dir) => match std::env::current_exe()
-            .map_err(|e| e.to_string())
-            .and_then(|exe| ensure_desktop_file(&dir, &exe))
-        {
-            Ok(DesktopFile::Current) => {}
-            Ok(done) => eprintln!(
-                "lootwise: {} {}",
-                match done {
-                    DesktopFile::Installed => "installed",
-                    _ => "updated",
-                },
-                dir.join(desktop_file_name()).display()
-            ),
-            Err(e) => eprintln!("lootwise: can't install the desktop file: {e}"),
-        },
+    let installed = desktop_dir()
+        .ok_or_else(|| "neither XDG_DATA_HOME nor HOME is set".to_owned())
+        .and_then(|dir| {
+            let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+            Ok((ensure_desktop_file(&dir, &exe)?, dir.join(DESKTOP_FILE)))
+        });
+    match installed {
+        Ok((DesktopFile::Current, _)) => {}
+        Ok((DesktopFile::Installed, path)) => eprintln!("lootwise: installed {}", path.display()),
+        Ok((DesktopFile::Updated, path)) => eprintln!("lootwise: updated {}", path.display()),
+        Err(e) => eprintln!("lootwise: can't install the desktop file: {e}"),
     }
-    let pid = std::process::id();
     match ensure_scope(
-        pid,
+        std::process::id(),
         || std::fs::read_to_string("/proc/self/cgroup"),
         start_transient_scope,
         || std::thread::sleep(SCOPE_POLL),
     ) {
         Ok(Scope::Already) => {}
         Ok(Scope::Entered(name)) => eprintln!("lootwise: running in systemd scope {name}"),
-        Err(e) => eprintln!("lootwise: not in an app scope, so the portal can't name Lootwise: {e}"),
+        Err(e) => {
+            eprintln!("lootwise: not in an app scope, so the portal can't name Lootwise: {e}")
+        }
     }
 }
 
-/// What Lootwise prints when registering Ctrl+D failed, beyond Rune's own message.
-pub fn shortcut_advice(error: &ShortcutError) -> Option<String> {
-    match error {
-        ShortcutError::PermissionDenied => Some(format!(
-            "Ctrl+D isn't registered. If the desktop showed no shortcut dialog, its portal \
-             couldn't tell which app was asking: it needs Lootwise in a systemd scope named \
-             app-{APP_ID}-<n>.scope and {} in ~/.local/share/applications, which Lootwise sets \
-             up at start (see the lines above). If you declined the dialog, allow Lootwise in \
-             System Settings > Shortcuts, or restart Lootwise to be asked again.",
-            desktop_file_name()
-        )),
-        _ => None,
+/// Says what to do about Rune's failures to register Ctrl+D, which it has already printed.
+pub fn explain_shortcut_errors(errors: &[ShortcutError]) {
+    if errors.contains(&ShortcutError::PermissionDenied) {
+        eprintln!(
+            "lootwise: Ctrl+D isn't registered. If the desktop showed no shortcut dialog, its \
+             portal couldn't tell which app was asking: it needs Lootwise in a systemd scope \
+             named app-{APP_ID}-<n>.scope and {DESKTOP_FILE} in $XDG_DATA_HOME/applications \
+             (~/.local/share/applications by default), which Lootwise sets up at start (see the \
+             lines above). If you declined the dialog, allow Lootwise in the desktop's shortcut \
+             settings (KDE: System Settings > Shortcuts), or restart Lootwise to be asked again."
+        );
     }
-}
-
-fn desktop_file_name() -> String {
-    format!("{APP_ID}.desktop")
 }
 
 /// `$XDG_DATA_HOME/applications`, falling back to `~/.local/share/applications`.
@@ -104,7 +94,7 @@ fn ensure_desktop_file(dir: &Path, exe: &Path) -> Result<DesktopFile, String> {
         .to_str()
         .ok_or_else(|| format!("the binary's path isn't UTF-8: {}", exe.display()))?;
     let wanted = desktop_entry(exe);
-    let path = dir.join(desktop_file_name());
+    let path = dir.join(DESKTOP_FILE);
     let outcome = match std::fs::read_to_string(&path) {
         Ok(existing) if existing == wanted => return Ok(DesktopFile::Current),
         Ok(_) => DesktopFile::Updated,
@@ -115,7 +105,7 @@ fn ensure_desktop_file(dir: &Path, exe: &Path) -> Result<DesktopFile, String> {
     let write = || -> io::Result<()> {
         std::fs::create_dir_all(dir)?;
         // Through a temporary file, so the desktop never reads half a file.
-        let partial = dir.join(format!(".{}.partial", desktop_file_name()));
+        let partial = dir.join(format!(".{DESKTOP_FILE}.partial"));
         std::fs::write(&partial, &wanted)?;
         std::fs::rename(&partial, &path)
     };
@@ -216,7 +206,9 @@ fn ensure_scope(
         }
         pause();
     }
-    Err(format!("systemd started {name} but didn't move Lootwise into it"))
+    Err(format!(
+        "systemd started {name} but didn't move Lootwise into it"
+    ))
 }
 
 /// `StartTransientUnit` on the user's systemd: a scope holding `pid`.
@@ -261,8 +253,7 @@ mod tests {
     use super::*;
     use std::cell::{Cell, RefCell};
 
-    const TERMINAL: &str =
-        "0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.kde.konsole-4242.scope\n";
+    const TERMINAL: &str = "0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.kde.konsole-4242.scope\n";
 
     fn scoped(unit: &str) -> String {
         format!("0::/user.slice/user-1000.slice/user@1000.service/app.slice/{unit}\n")
@@ -270,7 +261,9 @@ mod tests {
 
     #[test]
     fn a_unit_of_lootwises_app_id_counts_as_its_scope() {
-        assert!(in_app_scope(&scoped("app-io.github.hawasman.Lootwise-77.scope")));
+        assert!(in_app_scope(&scoped(
+            "app-io.github.hawasman.Lootwise-77.scope"
+        )));
         assert!(in_app_scope(&scoped(
             "app-io.github.hawasman.Lootwise@3f2a.service"
         )));
@@ -342,7 +335,7 @@ mod tests {
     }
 
     fn installed(dir: &Path) -> String {
-        std::fs::read_to_string(dir.join("io.github.hawasman.Lootwise.desktop")).unwrap()
+        std::fs::read_to_string(dir.join(DESKTOP_FILE)).unwrap()
     }
 
     #[test]
@@ -371,12 +364,18 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let exe = Path::new("/opt/lootwise/lootwise");
         ensure_desktop_file(dir.path(), exe).unwrap();
-        assert_eq!(ensure_desktop_file(dir.path(), exe), Ok(DesktopFile::Current));
+        assert_eq!(
+            ensure_desktop_file(dir.path(), exe),
+            Ok(DesktopFile::Current)
+        );
     }
 
     #[test]
     fn a_binary_path_with_spaces_is_quoted_in_exec() {
-        assert_eq!(exec_program("/opt/lootwise/lootwise"), "/opt/lootwise/lootwise");
+        assert_eq!(
+            exec_program("/opt/lootwise/lootwise"),
+            "/opt/lootwise/lootwise"
+        );
         assert_eq!(
             exec_program("/home/p/My Games/lootwise"),
             "\"/home/p/My Games/lootwise\""

@@ -130,18 +130,13 @@ fn main() {
         .init(move || Lootwise { overlay })
         .global_shortcut("ctrl+d", price_check);
 
-    // Queued now, run once the app has started and registered Ctrl+D.
-    let shortcuts = app.handle();
-    app.handle().update(move |_, _| {
-        for error in shortcuts.take_shortcut_errors() {
-            #[cfg(target_os = "linux")]
-            if let Some(advice) = app_id::shortcut_advice(&error) {
-                eprintln!("lootwise: {advice}");
-                continue;
-            }
-            eprintln!("lootwise: Ctrl+D isn't registered: {error}");
-        }
-    });
+    // Queued now, run once the app has started and Rune has tried to register Ctrl+D.
+    #[cfg(target_os = "linux")]
+    {
+        let shortcuts = app.handle();
+        app.handle()
+            .update(move |_, _| app_id::explain_shortcut_errors(&shortcuts.take_shortcut_errors()));
+    }
 
     let quit = app.handle();
     let tray = Tray::new(
