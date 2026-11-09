@@ -23,7 +23,8 @@ use lootwise_sources::{RelayFeed, RelaySource, default_cache_dir};
 use price_check::PriceCheckOverlay;
 use rune::{
     App, AppSpec, Cx, DisplayTarget, El, KeyPolicy, OverlayHandle, OverlayInput, OverlayOptions,
-    OverlayPlacement, OverlaySpec, Tray, TrayEvent, TrayIcon, TrayItem, TraySpec, Tx, el,
+    OverlayPlacement, OverlaySpec, Tray, TrayEvent, TrayIcon, TrayItem, TraySpec, Tx, WindowSpec,
+    el,
 };
 
 const QUIT: &str = "quit";
@@ -114,7 +115,8 @@ fn main() {
         )
         .options(OverlayOptions {
             placement: Some(OverlayPlacement::FullScreen),
-            display: DisplayTarget::UnderPointer,
+            // Each Price Check moves it to the display under the pointer (`set_display`).
+            display: DisplayTarget::Primary,
             keys: KeyPolicy::OnDemand,
             input: OverlayInput::Regions,
             ..OverlayOptions::default()
@@ -129,6 +131,7 @@ fn main() {
     );
     let surface = overlay.clone();
     overlay.update(move |s, _| s.attach(surface));
+    let display_list = overlay.clone();
     let app = app
         .init(move || Lootwise { overlay })
         .global_shortcut("ctrl+d", price_check);
@@ -155,6 +158,11 @@ fn main() {
     if let Err(e) = &tray {
         eprintln!("lootwise: no tray icon ({e}); quit with Ctrl+C in the terminal");
     }
-    app.run();
+    // `App::run`, but with the displays: each Price Check opens on the one under the pointer.
+    rune::run_windows(move |displays| {
+        let displays = displays.to_vec();
+        display_list.update(move |s, _| s.set_displays(displays));
+        [WindowSpec::from_app("main", app)]
+    });
     drop(tray);
 }

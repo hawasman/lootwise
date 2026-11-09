@@ -7,12 +7,24 @@
 //! ([`KeyPolicy::OnDemand`]), and then hears Esc alone. Since the game keeps focus, the overlay
 //! can't hear the player leave the card; instead it samples the pointer while the card is shown
 //! and closes the card on a mouse button press outside it or once the pointer is far from it.
+//!
+//! The pointer and the overlay measure in different spaces: the pointer in global desktop
+//! pixels (XWayland's root on Linux), the overlay in points that, on Wayland, start at `(0, 0)`
+//! on every display. So both placement and leave detection work in the card's display's local
+//! points: the pointer less its display's origin, both as the pointer sees them, and the card's
+//! rect less the overlay's.
+//!
+//! [`OverlayInput::Regions`]: rune::OverlayInput::Regions
+//! [`KeyPolicy::OnDemand`]: rune::KeyPolicy::OnDemand
 
 use std::time::Duration;
 
 use lootwise_core::{Confidence, Item, PriceCheck, Rarity, Valuation};
-use lootwise_input::{ClipboardCopy, KeySender, Pointer, PointerLocator, Tick};
-use rune::{ClipboardContent, Color, Cx, El, Key, KeyEvent, OverlayHandle, Tx, col, el, text};
+use lootwise_input::{ClipboardCopy, KeySender, PointerLocator, Tick};
+use rune::{
+    ClipboardContent, Color, Cx, Display, DisplayTarget, El, Key, KeyEvent, OverlayHandle, Tx, col,
+    el, text,
+};
 use rune_kit::Kit;
 
 pub const NOT_AN_ITEM: &str = "Not a Path of Exile item";
@@ -44,14 +56,39 @@ pub enum CardContent {
     Failed(String),
 }
 
-/// Where the card is: its rect in global points, as the overlay last laid it out, the
-/// display's scale then, and the anchor it was laid out beside. Bounds laid out for another
-/// anchor are a previous card's.
-#[derive(Clone, Copy, Debug, PartialEq)]
+/// Where a card goes: beside where the pointer was when the player pressed Ctrl+D, on the
+/// display it was on.
+#[derive(Clone, Debug, PartialEq)]
+struct CardPlace {
+    /// The pointer, in global desktop pixels; `None` when the platform couldn't say.
+    pointer: Option<(i32, i32)>,
+    /// The top-left of the pointer's display, in the same pixels.
+    origin: (i32, i32),
+    /// The display the overlay opens on.
+    display: DisplayTarget,
+}
+
+impl CardPlace {
+    /// `at`, in global desktop pixels, as points from the display's top-left at its `scale`
+    /// (1 when unknown).
+    fn local(&self, (x, y): (i32, i32), scale: f32) -> (f32, f32) {
+        let scale = if scale > 0.0 { scale } else { 1.0 };
+        let (dx, dy) = (
+            i64::from(x) - i64::from(self.origin.0),
+            i64::from(y) - i64::from(self.origin.1),
+        );
+        (dx as f32 / scale, dy as f32 / scale)
+    }
+}
+
+/// Where the card is: its rect in the overlay's local points, as last laid out, the display's
+/// scale then, and the place it was laid out for. Bounds laid out for another place are a
+/// previous card's.
+#[derive(Clone, Debug, PartialEq)]
 struct CardBounds {
     rect: [f32; 4],
     scale: f32,
-    anchor: Option<(i32, i32)>,
+    place: Option<CardPlace>,
 }
 
 /// The overlay's state.
@@ -60,13 +97,15 @@ pub struct PriceCheckOverlay {
     pointer: Box<dyn PointerLocator>,
     copy: ClipboardCopy<ClipboardContent>,
     pricer: Pricer,
+    /// The displays the overlay can open on, as Rune lists them at startup.
+    displays: Vec<Display>,
     card: Option<CardContent>,
-    /// Global desktop pixels: where the pointer was when the player pressed Ctrl+D for the
-    /// card shown.
-    anchor: Option<(i32, i32)>,
+    /// Where the card shown goes.
+    place: Option<CardPlace>,
     /// The same for the Price Check running, until its card replaces the shown one.
-    checking_at: Option<(i32, i32)>,
-    /// The overlay's rect in global points, from `on_screen_layout`.
+    checking: Option<CardPlace>,
+    /// The overlay's rect in points, from `on_screen_layout`: global on X11 and Windows,
+    /// starting at `(0, 0)` on Wayland.
     screen: [f32; 4],
     bounds: Option<CardBounds>,
     /// When the pointer is next sampled, while the card is shown.
@@ -84,9 +123,10 @@ impl PriceCheckOverlay {
             pointer,
             copy: ClipboardCopy::new(),
             pricer,
+            displays: Vec::new(),
             card: None,
-            anchor: None,
-            checking_at: None,
+            place: None,
+            checking: None,
             screen: [0.0; 4],
             bounds: None,
             sample_due: None,
@@ -100,9 +140,24 @@ impl PriceCheckOverlay {
         self.surface = Some(surface);
     }
 
+    /// The displays a card can open on.
+    pub fn set_displays(&mut self, displays: Vec<Display>) {
+        self.displays = displays;
+    }
+
     fn show(&mut self, card: CardContent) {
+        let was_shown = self.card.is_some();
         self.card = Some(card);
-        self.anchor = self.checking_at.take();
+        if let Some(place) = self.checking.take() {
+            let moved = self.place.as_ref().map(|p| &p.display) != Some(&place.display);
+            // A shown overlay moved to its own display again is remade on Wayland: a flicker.
+            if (moved || !was_shown)
+                && let Some(surface) = &self.surface
+            {
+                surface.set_display(place.display.clone());
+            }
+            self.place = Some(place);
+        }
         if let Some(surface) = &self.surface {
             surface.show();
         }
@@ -124,7 +179,7 @@ pub fn shortcut(s: &mut PriceCheckOverlay, tx: &mut Tx) {
         return;
     }
     // Before the copy's delays, so a mouse moved meanwhile doesn't drag the card off the item.
-    s.checking_at = s.pointer.pointer().map(|p| p.at);
+    s.checking = Some(card_place(&s.displays, s.pointer.as_mut()));
     tx.read_clipboard(|s: &mut PriceCheckOverlay, saved, tx| {
         if let Some(due) = s.copy.saved(saved.clone(), tx.clock()) {
             tx.copy("");
@@ -183,29 +238,82 @@ fn watch_pointer(s: &mut PriceCheckOverlay, clock: f64, tx: &mut Tx) -> bool {
     if s.copy.is_busy() {
         return false;
     }
-    let card = s.bounds.filter(|b| b.anchor == s.anchor);
-    if card.is_some_and(|card| player_left(card, pointer, just_pressed)) {
+    let Some(card) = s.bounds.as_ref().filter(|b| b.place == s.place) else {
+        return false;
+    };
+    let Some(place) = &s.place else { return false };
+    let at = place.local(pointer.at, card.scale);
+    if player_left(card.rect, at, just_pressed) {
         s.hide();
         return true;
     }
     false
 }
 
-/// Whether the player has left the card: pressed a mouse button outside it (`just_pressed`:
-/// a button went down since the last sample), or moved the pointer beyond [`LEAVE_DISTANCE`].
-fn player_left(card: CardBounds, pointer: Pointer, just_pressed: bool) -> bool {
-    let (px, py) = to_points(pointer.at, card.scale);
-    let [x, y, w, h] = card.rect;
+/// Whether the player has left the card at `rect`, the pointer being `at`, both in local
+/// points: pressed a mouse button outside it (`just_pressed`: a button went down since the last
+/// sample), or moved beyond [`LEAVE_DISTANCE`].
+fn player_left(rect: [f32; 4], (px, py): (f32, f32), just_pressed: bool) -> bool {
+    let [x, y, w, h] = rect;
     let dx = (x - px).max(px - (x + w)).max(0.0);
     let dy = (y - py).max(py - (y + h)).max(0.0);
     let distance = dx.hypot(dy);
     distance > LEAVE_DISTANCE || (just_pressed && distance > 0.0)
 }
 
-/// Global desktop pixels as global points, at the display's `scale` (1 when unknown).
-fn to_points((x, y): (i32, i32), scale: f32) -> (f32, f32) {
-    let scale = if scale > 0.0 { scale } else { 1.0 };
-    (x as f32 / scale, y as f32 / scale)
+/// The display a Price Check's card opens on, as an index into Rune's `displays`: the one
+/// matching `under` (the pointer's display, as the pointer sees it) by connector name, else by
+/// geometry; with no `under`, the one holding the pointer `at`; else the primary.
+fn card_display(
+    displays: &[Display],
+    under: Option<&lootwise_input::Display>,
+    at: Option<(i32, i32)>,
+) -> Option<usize> {
+    let by_name = || {
+        let name = under?.name.as_ref()?;
+        displays.iter().position(|d| d.name.as_ref() == Some(name))
+    };
+    let by_geometry = || {
+        let under = under?;
+        displays
+            .iter()
+            .position(|d| d.position == under.origin && d.size == under.size)
+    };
+    // Only without `under`: once the pointer's display matches none, its space isn't Rune's.
+    let holding = || {
+        let at = at.filter(|_| under.is_none())?;
+        displays.iter().position(|d| {
+            lootwise_input::Display {
+                name: None,
+                origin: d.position,
+                size: d.size,
+                primary: d.primary,
+            }
+            .contains(at)
+        })
+    };
+    by_name()
+        .or_else(by_geometry)
+        .or_else(holding)
+        .or_else(|| displays.iter().position(|d| d.primary))
+}
+
+/// Where a Price Check started now puts its card: beside the pointer, on its display.
+fn card_place(displays: &[Display], pointer: &mut dyn PointerLocator) -> CardPlace {
+    let at = pointer.pointer().map(|p| p.at);
+    let under = at.and_then(|at| pointer.display(at));
+    let chosen = card_display(displays, under.as_ref(), at).map(|i| &displays[i]);
+    CardPlace {
+        pointer: at,
+        // On a display Rune doesn't list, the card goes to the primary at the same spot.
+        origin: under
+            .map(|d| d.origin)
+            .or(chosen.map(|d| d.position))
+            .unwrap_or_default(),
+        display: chosen
+            .and_then(|d| d.id.clone())
+            .map_or(DisplayTarget::Primary, DisplayTarget::Id),
+    }
 }
 
 /// The overlay's keys, once it has them: Esc closes the card, everything else passes.
@@ -217,16 +325,13 @@ pub fn on_key(s: &mut PriceCheckOverlay, ev: &KeyEvent, _: &mut Tx) -> bool {
     true
 }
 
-/// Where the card's top-left goes in the overlay, in points: beside the pointer, kept on the
-/// display. `pointer` is in global desktop pixels; `screen` is the overlay's global rect in
-/// points (zero before its first layout, when no clamping happens).
-fn card_origin(pointer: Option<(i32, i32)>, scale: f32, screen: [f32; 4]) -> (f32, f32) {
-    let Some(pointer) = pointer else {
+/// Where the card's top-left goes in the overlay, in points: beside `pointer` (local points),
+/// kept on the overlay of `size` points (zero before its first layout, when no clamping
+/// happens).
+fn card_origin(pointer: Option<(f32, f32)>, size: (f32, f32)) -> (f32, f32) {
+    let Some((px, py)) = pointer else {
         return (POINTER_GAP, POINTER_GAP);
     };
-    let (px, py) = to_points(pointer, scale);
-    let x = px - screen[0] + POINTER_GAP;
-    let y = py - screen[1] + POINTER_GAP;
     let clamp = |v: f32, room: f32| {
         if room > 0.0 {
             v.min(room).max(0.0)
@@ -235,8 +340,8 @@ fn card_origin(pointer: Option<(i32, i32)>, scale: f32, screen: [f32; 4]) -> (f3
         }
     };
     (
-        clamp(x, screen[2] - CARD_SIZE.0),
-        clamp(y, screen[3] - CARD_SIZE.1),
+        clamp(px + POINTER_GAP, size.0 - CARD_SIZE.0),
+        clamp(py + POINTER_GAP, size.1 - CARD_SIZE.1),
     )
 }
 
@@ -391,8 +496,12 @@ pub fn view(s: &PriceCheckOverlay, cx: &mut Cx<PriceCheckOverlay>) -> El {
     let Some(card) = &s.card else { return root };
     let k = Kit::neutral(true);
     let (accent, body) = card_body(card, &k);
-    let (scale, anchor) = (cx.env().scale, s.anchor);
-    let (x, y) = card_origin(anchor, scale, s.screen);
+    let scale = cx.env().scale;
+    let place = s.place.clone();
+    let pointer = place
+        .as_ref()
+        .and_then(|p| Some(p.local(p.pointer?, scale)));
+    let (x, y) = card_origin(pointer, (s.screen[2], s.screen[3]));
     let card = rune_kit::Card::new().accent(accent).child(body).build(&k);
     root.child(
         el().key("card")
@@ -402,12 +511,13 @@ pub fn view(s: &PriceCheckOverlay, cx: &mut Cx<PriceCheckOverlay>) -> El {
             .border(1.0, k.c.border_base)
             .absolute(x, y)
             .hit()
-            // Where the player's pointer is measured from, to close the card once they leave.
-            .on_screen_layout(move |s: &mut PriceCheckOverlay, rect| {
+            // Where the player's pointer is measured from, to close the card once they leave:
+            // less the overlay's origin, the card's rect in the display's local points.
+            .on_screen_layout(move |s: &mut PriceCheckOverlay, [x, y, w, h]| {
                 s.bounds = Some(CardBounds {
-                    rect,
+                    rect: [x - s.screen[0], y - s.screen[1], w, h],
                     scale,
-                    anchor,
+                    place: place.clone(),
                 });
             })
             // A click hands the card the keyboard, so Esc reaches it.
@@ -423,7 +533,7 @@ pub fn view(s: &PriceCheckOverlay, cx: &mut Cx<PriceCheckOverlay>) -> El {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lootwise_input::InputError;
+    use lootwise_input::{InputError, Pointer};
     use rune::clipboard::MemoryClipboard;
     use rune::{Env, Mods, Runtime};
     use std::cell::Cell;
@@ -455,13 +565,18 @@ mod tests {
                 pressed: false,
             })
         }
+        fn display(&mut self, _: (i32, i32)) -> Option<lootwise_input::Display> {
+            None
+        }
     }
-    /// A pointer the test moves and presses, counting how often the overlay samples it.
+    /// A pointer the test moves and presses, counting how often the overlay samples it, on
+    /// `displays` as it sees them (none by default: the platform can't say).
     #[derive(Clone, Default)]
     struct Mouse {
         at: Rc<Cell<(i32, i32)>>,
         pressed: Rc<Cell<bool>>,
         samples: Rc<Cell<u32>>,
+        displays: Vec<lootwise_input::Display>,
     }
     impl Mouse {
         fn at(x: i32, y: i32) -> Self {
@@ -477,6 +592,9 @@ mod tests {
                 at: self.at.get(),
                 pressed: self.pressed.get(),
             })
+        }
+        fn display(&mut self, at: (i32, i32)) -> Option<lootwise_input::Display> {
+            self.displays.iter().find(|d| d.contains(at)).cloned()
         }
     }
 
@@ -756,7 +874,15 @@ mod tests {
         clipboard: &MemoryClipboard,
         copies: &'static str,
     ) -> (Runtime<PriceCheckOverlay>, Mouse, Rc<Cell<&'static str>>) {
-        let mouse = Mouse::at(400, 300);
+        watched_by(clipboard, copies, Mouse::at(400, 300))
+    }
+
+    /// The same with `mouse`.
+    fn watched_by(
+        clipboard: &MemoryClipboard,
+        copies: &'static str,
+        mouse: Mouse,
+    ) -> (Runtime<PriceCheckOverlay>, Mouse, Rc<Cell<&'static str>>) {
         let copies = Rc::new(Cell::new(copies));
         let game = FakeGame {
             clipboard: clipboard.clone(),
@@ -879,22 +1005,175 @@ mod tests {
 
     #[test]
     fn the_card_opens_beside_the_pointer_and_stays_on_the_display() {
-        let screen = [0.0, 0.0, 1920.0, 1080.0];
-        assert_eq!(card_origin(Some((400, 300)), 1.0, screen), (416.0, 316.0));
+        let size = (1920.0, 1080.0);
+        assert_eq!(card_origin(Some((400.0, 300.0)), size), (416.0, 316.0));
         assert_eq!(
-            card_origin(Some((800, 600)), 2.0, screen),
-            (416.0, 316.0),
-            "pixels become points"
-        );
-        assert_eq!(
-            card_origin(Some((1910, 1070)), 1.0, screen),
+            card_origin(Some((1910.0, 1070.0)), size),
             (1600.0, 860.0),
             "kept clear of the edges"
         );
+        assert_eq!(card_origin(None, size), (16.0, 16.0), "pointer unknown");
+    }
+
+    #[test]
+    fn the_pointer_is_measured_from_its_displays_top_left_in_points() {
+        let place = CardPlace {
+            pointer: None,
+            origin: (1920, 0),
+            display: DisplayTarget::Primary,
+        };
+        assert_eq!(place.local((2264, 606), 1.0), (344.0, 606.0));
         assert_eq!(
-            card_origin(Some((2320, 300)), 1.0, [1920.0, 0.0, 1920.0, 1080.0]),
-            (416.0, 316.0),
-            "on a display right of the primary"
+            place.local((2720, 600), 2.0),
+            (400.0, 300.0),
+            "pixels become points"
+        );
+        assert_eq!(
+            place.local((1900, 10), 1.0),
+            (-20.0, 10.0),
+            "left of the display"
+        );
+    }
+
+    /// The user's desktop: `HDMI-A-2` at `+0+0` and the primary `HDMI-A-1` at `+1920+0`, both
+    /// 1920×1080 at scale 1, as the pointer (XWayland) sees them.
+    fn pointer_displays() -> Vec<lootwise_input::Display> {
+        let display = |name: &str, x, primary| lootwise_input::Display {
+            name: Some(name.into()),
+            origin: (x, 0),
+            size: (1920, 1080),
+            primary,
+        };
+        vec![
+            display("HDMI-A-1", 1920, true),
+            display("HDMI-A-2", 0, false),
+        ]
+    }
+
+    /// The same as Rune lists them.
+    fn overlay_displays() -> Vec<Display> {
+        pointer_displays()
+            .into_iter()
+            .map(|d| Display {
+                id: None,
+                name: d.name,
+                position: d.origin,
+                size: d.size,
+                scale: 1.0,
+                primary: d.primary,
+            })
+            .collect()
+    }
+
+    /// The overlay on [`pointer_displays`], the [`Mouse`] at `at`. Like Rune on Wayland, the
+    /// headless overlay's own origin reads `(0, 0)` whichever display it covers.
+    fn on_two_displays(
+        clipboard: &MemoryClipboard,
+        at: (i32, i32),
+    ) -> (Runtime<PriceCheckOverlay>, Mouse) {
+        let mut mouse = Mouse::at(at.0, at.1);
+        mouse.displays = pointer_displays();
+        let (mut rt, mouse, _) = watched_by(clipboard, UNIQUE, mouse);
+        rt.update(|s, _| s.set_displays(overlay_displays()));
+        (rt, mouse)
+    }
+
+    #[test]
+    fn on_the_primary_right_of_another_display_the_card_opens_beside_the_pointer_and_stays() {
+        let clipboard = rune::clipboard::memory();
+        let (mut rt, _) = on_two_displays(&clipboard, (2264, 606));
+        press_ctrl_d(&mut rt);
+        run(&mut rt, 1.0);
+        assert!(rt.state.card.is_some(), "the first samples don't close it");
+        assert_eq!(
+            card_at(&rt),
+            Some((360.0, 622.0)),
+            "beside the pointer, 344 points into HDMI-A-1"
+        );
+        assert_eq!(rt.state.place.as_ref().map(|p| p.origin), Some((1920, 0)));
+    }
+
+    #[test]
+    fn on_the_display_at_the_origin_the_card_opens_beside_the_pointer_and_stays() {
+        let clipboard = rune::clipboard::memory();
+        let (mut rt, _) = on_two_displays(&clipboard, (500, 400));
+        press_ctrl_d(&mut rt);
+        run(&mut rt, 1.0);
+        assert!(rt.state.card.is_some(), "the first samples don't close it");
+        assert_eq!(card_at(&rt), Some((516.0, 416.0)));
+        assert_eq!(rt.state.place.as_ref().map(|p| p.origin), Some((0, 0)));
+    }
+
+    #[test]
+    fn on_another_display_moving_beyond_about_a_card_width_still_closes_the_card() {
+        let clipboard = rune::clipboard::memory();
+        let (mut rt, mouse) = on_two_displays(&clipboard, (2264, 606));
+        press_ctrl_d(&mut rt);
+        // The card spans x 360..680 in HDMI-A-1's points, 2280..2600 on the desktop.
+        mouse.at.set((2864, 650));
+        run(&mut rt, 0.2);
+        assert!(rt.state.card.is_some(), "264 points away");
+        mouse.at.set((2934, 650));
+        run(&mut rt, 0.2);
+        assert_eq!(rt.state.card, None, "334 points away");
+    }
+
+    #[test]
+    fn on_another_display_a_press_outside_the_card_still_closes_it() {
+        let clipboard = rune::clipboard::memory();
+        let (mut rt, mouse) = on_two_displays(&clipboard, (2264, 606));
+        press_ctrl_d(&mut rt);
+        click(&mut rt, &mouse, (2400, 700));
+        assert!(rt.state.card.is_some(), "a press inside keeps it");
+        click(&mut rt, &mouse, (2200, 650));
+        assert_eq!(rt.state.card, None);
+    }
+
+    #[test]
+    fn the_card_opens_on_the_overlay_display_matching_the_pointers() {
+        let overlay = overlay_displays();
+        let pointer = pointer_displays();
+        let (primary, left) = (Some(0), Some(1));
+        assert_eq!(
+            card_display(&overlay, Some(&pointer[0]), Some((2264, 606))),
+            primary
+        );
+        assert_eq!(
+            card_display(&overlay, Some(&pointer[1]), Some((500, 400))),
+            left
+        );
+
+        // Rune places Wayland outputs in compositor space, which needn't be XWayland's.
+        let mut moved = overlay.clone();
+        moved[1].position = (-1920, 0);
+        assert_eq!(
+            card_display(&moved, Some(&pointer[1]), Some((500, 400))),
+            left,
+            "by connector name"
+        );
+
+        let mut unnamed = pointer[1].clone();
+        unnamed.name = None;
+        assert_eq!(
+            card_display(&overlay, Some(&unnamed), Some((500, 400))),
+            left,
+            "by geometry"
+        );
+        assert_eq!(
+            card_display(&moved, Some(&unnamed), Some((500, 400))),
+            primary,
+            "no match: the primary"
+        );
+
+        assert_eq!(
+            card_display(&overlay, None, Some((500, 400))),
+            left,
+            "the pointer's display unknown: the one holding the pointer"
+        );
+        assert_eq!(card_display(&overlay, None, None), primary);
+        assert_eq!(
+            card_display(&[], Some(&pointer[0]), Some((2264, 606))),
+            None
         );
     }
 
