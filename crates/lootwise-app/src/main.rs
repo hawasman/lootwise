@@ -160,6 +160,23 @@ fn main() {
     }
     // `App::run`, but with the displays: each Price Check opens on the one under the pointer.
     rune::run_windows(move |displays| {
+        for d in displays {
+            eprintln!(
+                "lootwise: display {} at {},{} {}x{} scale {}{}{}",
+                d.name.as_deref().unwrap_or("(unnamed)"),
+                d.position.0,
+                d.position.1,
+                d.size.0,
+                d.size.1,
+                d.scale,
+                if d.primary { ", primary" } else { "" },
+                if d.id.is_none() {
+                    ", not targetable"
+                } else {
+                    ""
+                },
+            );
+        }
         let displays = displays.to_vec();
         display_list.update(move |s, _| s.set_displays(displays));
         [WindowSpec::from_app("main", app)]
