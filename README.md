@@ -6,8 +6,11 @@ A Path of Exile pricing tool that tells a player what their items and stash are 
 
 | Crate | Holds |
 | --- | --- |
+| `crates/lootwise-core` | The domain engine: clipboard item parsing, Commodity Item classification and Valuation, with `PriceFeed` and `Clock` ports ([README](crates/lootwise-core/README.md)) |
 | `crates/lootwise-input` | `KeySender` (Ctrl+C to the focused window, through `enigo`), `PointerLocator`, and `ClipboardCopy`, the save → copy → read → restore sequence of a Price Check |
 | `crates/lootwise-app` | The `lootwise` binary: a tray app on Rune with the Ctrl+D Price Check overlay |
+
+`relay/` is the Cloudflare Worker that relays poe.ninja prices to R2 (ADR 0004); see [`relay/README.md`](relay/README.md).
 
 The toolchain is pinned in `rust-toolchain.toml` (rustup installs it on the first build), and every Rune crate is pinned to one rev (ADR 0001).
 
