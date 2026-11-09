@@ -1739,6 +1739,9 @@ dependencies = [
  "lootwise-sources",
  "rune",
  "rune-kit",
+ "tempfile",
+ "tokio",
+ "zbus 6.2.1",
 ]
 
 [[package]]

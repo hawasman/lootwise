@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lootwise
+Comment=Path of Exile price checker
+Exec=lootwise
+Icon=applications-games
+Terminal=false
+Categories=Game;Utility;

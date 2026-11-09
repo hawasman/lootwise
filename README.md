@@ -49,6 +49,8 @@ Tested setup: KDE Plasma on Wayland, Path of Exile running under Proton (so the 
 
    A gold coin appears in the system tray; its menu has **Quit**. If the relay is unreachable, Lootwise prices from its cache, and those Valuations turn low-confidence as they age.
 3. The first start asks, through KDE's global shortcuts dialog, to allow **Ctrl+D**. Accept it. (Rune registers it through the desktop's GlobalShortcuts portal on Wayland.)
+
+   The portal only asks for an app it can name, so on Linux Lootwise gives itself the app id `io.github.hawasman.Lootwise` before registering: it installs its desktop file, [`packaging/linux/io.github.hawasman.Lootwise.desktop`](packaging/linux/io.github.hawasman.Lootwise.desktop), into `$XDG_DATA_HOME/applications` (`~/.local/share/applications`) with `Exec` set to the running binary, replacing a copy that launches another build, and moves itself into a systemd user scope `app-io.github.hawasman.Lootwise-<pid>.scope`. Its log says what it did. Launched from the desktop's menu it is in such a scope already. If Ctrl+D still can't be registered (no systemd user session, say), Lootwise prints why and how to fix it.
 4. In the game, hover an item and press **Ctrl+D**. Lootwise sends Ctrl+C to the game, reads the item text off the clipboard, puts your previous clipboard back, and shows the item's Valuation next to the pointer. Text that isn't an item shows "Not a Path of Exile item".
 5. Close the card with **Ctrl+D** again, or click it and press **Esc**.
 

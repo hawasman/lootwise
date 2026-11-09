@@ -6,7 +6,12 @@
 //!   `pnpm dev:mirror` (ADR 0004).
 //! - `LOOTWISE_LEAGUE`: the League to price in, as poe.ninja names it; `Standard` by default.
 //! - `LOOTWISE_CACHE`: where downloaded prices are kept; the platform data dir by default.
+//!
+//! On Linux it first gives itself its app id, so the desktop portal lets it register Ctrl+D
+//! ([`app_id`]).
 
+#[cfg(target_os = "linux")]
+mod app_id;
 mod price_check;
 
 use std::path::PathBuf;
@@ -92,6 +97,8 @@ fn main() {
         eprintln!("lootwise: {e}");
         std::process::exit(2);
     });
+    #[cfg(target_os = "linux")]
+    app_id::establish();
     let input = || Box::new(EnigoInput::new());
     let mut app = App::new(AppSpec::new(
         "Lootwise",
@@ -122,6 +129,19 @@ fn main() {
     let app = app
         .init(move || Lootwise { overlay })
         .global_shortcut("ctrl+d", price_check);
+
+    // Queued now, run once the app has started and registered Ctrl+D.
+    let shortcuts = app.handle();
+    app.handle().update(move |_, _| {
+        for error in shortcuts.take_shortcut_errors() {
+            #[cfg(target_os = "linux")]
+            if let Some(advice) = app_id::shortcut_advice(&error) {
+                eprintln!("lootwise: {advice}");
+                continue;
+            }
+            eprintln!("lootwise: Ctrl+D isn't registered: {error}");
+        }
+    });
 
     let quit = app.handle();
     let tray = Tray::new(
