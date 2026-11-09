@@ -8,7 +8,7 @@
 mod copy;
 mod enigo_input;
 
-pub use copy::{ClipboardCopy, Tick, CLEAR_SETTLE, COPY_WAIT};
+pub use copy::{CLEAR_SETTLE, COPY_WAIT, ClipboardCopy, Tick};
 pub use enigo_input::EnigoInput;
 
 /// Why a keystroke or pointer query failed.
@@ -16,7 +16,9 @@ pub use enigo_input::EnigoInput;
 pub struct InputError(pub String);
 
 impl std::fmt::Display for InputError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { f.write_str(&self.0) }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
 }
 
 impl std::error::Error for InputError {}

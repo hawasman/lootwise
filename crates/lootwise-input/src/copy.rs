@@ -24,9 +24,17 @@ enum Phase<C> {
     #[default]
     Idle,
     Saving,
-    Clearing { saved: C, due: f64 },
-    Copying { saved: C, due: f64 },
-    Reading { saved: C },
+    Clearing {
+        saved: C,
+        due: f64,
+    },
+    Copying {
+        saved: C,
+        due: f64,
+    },
+    Reading {
+        saved: C,
+    },
 }
 
 /// What the caller does after a [`ClipboardCopy::tick`].
@@ -48,18 +56,26 @@ pub struct ClipboardCopy<C> {
 }
 
 impl<C> Default for ClipboardCopy<C> {
-    fn default() -> Self { Self { phase: Phase::Idle } }
+    fn default() -> Self {
+        Self { phase: Phase::Idle }
+    }
 }
 
 impl<C> ClipboardCopy<C> {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     /// A sequence is under way.
-    pub fn is_busy(&self) -> bool { !matches!(self.phase, Phase::Idle) }
+    pub fn is_busy(&self) -> bool {
+        !matches!(self.phase, Phase::Idle)
+    }
 
     /// Start a sequence: the caller reads the clipboard next. False while one is under way.
     pub fn begin(&mut self) -> bool {
-        if self.is_busy() { return false; }
+        if self.is_busy() {
+            return false;
+        }
         self.phase = Phase::Saving;
         true
     }
@@ -67,9 +83,14 @@ impl<C> ClipboardCopy<C> {
     /// The clipboard as it was before the Price Check, read at `now`. The caller blanks the
     /// clipboard and ticks again at the returned time. Ignored outside step 1.
     pub fn saved(&mut self, content: C, now: f64) -> Option<f64> {
-        if !matches!(self.phase, Phase::Saving) { return None; }
+        if !matches!(self.phase, Phase::Saving) {
+            return None;
+        }
         let due = now + CLEAR_SETTLE;
-        self.phase = Phase::Clearing { saved: content, due };
+        self.phase = Phase::Clearing {
+            saved: content,
+            due,
+        };
         Some(due)
     }
 
@@ -82,7 +103,10 @@ impl<C> ClipboardCopy<C> {
                     self.phase = Phase::Copying { saved, due };
                     Tick::WakeAt(due)
                 }
-                Err(error) => Tick::Failed { restore: saved, error },
+                Err(error) => Tick::Failed {
+                    restore: saved,
+                    error,
+                },
             },
             Phase::Copying { saved, due } if now >= due => {
                 self.phase = Phase::Reading { saved };

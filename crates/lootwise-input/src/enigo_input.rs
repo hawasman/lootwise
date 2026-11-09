@@ -13,14 +13,19 @@ pub struct EnigoInput {
 }
 
 impl EnigoInput {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     fn enigo(&mut self) -> Result<&mut Enigo, InputError> {
         if self.enigo.is_none() {
-            let enigo = Enigo::new(&Settings::default()).map_err(|e| InputError(format!("can't connect for input: {e}")))?;
+            let enigo = Enigo::new(&Settings::default())
+                .map_err(|e| InputError(format!("can't connect for input: {e}")))?;
             self.enigo = Some(enigo);
         }
-        self.enigo.as_mut().ok_or_else(|| InputError("input connection missing".into()))
+        self.enigo
+            .as_mut()
+            .ok_or_else(|| InputError("input connection missing".into()))
     }
 }
 

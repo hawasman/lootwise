@@ -27,7 +27,9 @@ pub enum Card {
 }
 
 impl Card {
-    fn from_clipboard(text: &str) -> Self { parse_header(text).map_or(Card::NotAnItem, Card::Item) }
+    fn from_clipboard(text: &str) -> Self {
+        parse_header(text).map_or(Card::NotAnItem, Card::Item)
+    }
 }
 
 /// The overlay's state.
@@ -46,21 +48,35 @@ pub struct PriceCheck {
 
 impl PriceCheck {
     pub fn new(keys: Box<dyn KeySender>, pointer: Box<dyn PointerLocator>) -> Self {
-        Self { keys, pointer, copy: ClipboardCopy::new(), card: None, anchor: None, screen: [0.0; 4], surface: None }
+        Self {
+            keys,
+            pointer,
+            copy: ClipboardCopy::new(),
+            card: None,
+            anchor: None,
+            screen: [0.0; 4],
+            surface: None,
+        }
     }
 
     /// Lets the overlay show and hide its native surface.
-    pub fn attach(&mut self, surface: OverlayHandle<PriceCheck>) { self.surface = Some(surface); }
+    pub fn attach(&mut self, surface: OverlayHandle<PriceCheck>) {
+        self.surface = Some(surface);
+    }
 
     fn show(&mut self, card: Card) {
         self.anchor = self.pointer.pointer();
         self.card = Some(card);
-        if let Some(surface) = &self.surface { surface.show(); }
+        if let Some(surface) = &self.surface {
+            surface.show();
+        }
     }
 
     fn hide(&mut self) {
         self.card = None;
-        if let Some(surface) = &self.surface { surface.hide(); }
+        if let Some(surface) = &self.surface {
+            surface.hide();
+        }
     }
 }
 
@@ -70,7 +86,9 @@ pub fn shortcut(s: &mut PriceCheck, tx: &mut Tx) {
         s.hide();
         return;
     }
-    if !s.copy.begin() { return; }
+    if !s.copy.begin() {
+        return;
+    }
     tx.read_clipboard(|s: &mut PriceCheck, saved, tx| {
         if let Some(due) = s.copy.saved(saved.clone(), tx.clock()) {
             tx.copy("");
@@ -105,7 +123,9 @@ pub fn poll(s: &mut PriceCheck, clock: f64, tx: &mut Tx) -> bool {
 
 /// The overlay's keys, once it has them: Esc closes the card, everything else passes.
 pub fn on_key(s: &mut PriceCheck, ev: &KeyEvent, _: &mut Tx) -> bool {
-    if ev.key != Key::Escape || s.card.is_none() { return false; }
+    if ev.key != Key::Escape || s.card.is_none() {
+        return false;
+    }
     s.hide();
     true
 }
@@ -114,17 +134,33 @@ pub fn on_key(s: &mut PriceCheck, ev: &KeyEvent, _: &mut Tx) -> bool {
 /// display. `pointer` is in global desktop pixels; `screen` is the overlay's global rect in
 /// points (zero before its first layout, when no clamping happens).
 fn card_origin(pointer: Option<(i32, i32)>, scale: f32, screen: [f32; 4]) -> (f32, f32) {
-    let Some((px, py)) = pointer else { return (POINTER_GAP, POINTER_GAP) };
+    let Some((px, py)) = pointer else {
+        return (POINTER_GAP, POINTER_GAP);
+    };
     let scale = if scale > 0.0 { scale } else { 1.0 };
     let x = px as f32 / scale - screen[0] + POINTER_GAP;
     let y = py as f32 / scale - screen[1] + POINTER_GAP;
-    let clamp = |v: f32, room: f32| if room > 0.0 { v.min(room).max(0.0) } else { v.max(0.0) };
-    (clamp(x, screen[2] - CARD_SIZE.0), clamp(y, screen[3] - CARD_SIZE.1))
+    let clamp = |v: f32, room: f32| {
+        if room > 0.0 {
+            v.min(room).max(0.0)
+        } else {
+            v.max(0.0)
+        }
+    };
+    (
+        clamp(x, screen[2] - CARD_SIZE.0),
+        clamp(y, screen[3] - CARD_SIZE.1),
+    )
 }
 
 /// Path of Exile's colours for each rarity's name.
 fn rarity_color(rarity: &str, k: &Kit) -> Color {
-    let rgb = |r: u8, g: u8, b: u8| Color { r: f32::from(r) / 255.0, g: f32::from(g) / 255.0, b: f32::from(b) / 255.0, a: 1.0 };
+    let rgb = |r: u8, g: u8, b: u8| Color {
+        r: f32::from(r) / 255.0,
+        g: f32::from(g) / 255.0,
+        b: f32::from(b) / 255.0,
+        a: 1.0,
+    };
     match rarity {
         "Normal" => rgb(0xc8, 0xc8, 0xc8),
         "Magic" => rgb(0x88, 0x88, 0xff),
@@ -141,30 +177,69 @@ fn card_body(card: &Card, k: &Kit) -> (Color, El) {
     match card {
         Card::Item(item) => {
             let color = rarity_color(&item.rarity, k);
-            let mut body = col().gap(4.0).child(text(item.rarity.clone()).key("rarity").font(k.ty.body).color(k.c.text_muted));
+            let mut body = col().gap(4.0).child(
+                text(item.rarity.clone())
+                    .key("rarity")
+                    .font(k.ty.body)
+                    .color(k.c.text_muted),
+            );
             for (i, line) in item.name.iter().enumerate() {
                 let key = if i == 0 { "item-name" } else { "item-base" };
-                body = body.child(text(line.clone()).key(key).font(k.ty.body_medium).color(color));
+                body = body.child(
+                    text(line.clone())
+                        .key(key)
+                        .font(k.ty.body_medium)
+                        .color(color),
+                );
             }
             (color, body)
         }
-        Card::NotAnItem => (k.c.icon_muted, text(NOT_AN_ITEM).key("not-an-item").font(k.ty.body).color(k.c.text_base)),
-        Card::Failed(error) => (k.c.icon_muted, text(error.clone()).key("failed").font(k.ty.body).color(k.c.text_base).wrap().w_full()),
+        Card::NotAnItem => (
+            k.c.icon_muted,
+            text(NOT_AN_ITEM)
+                .key("not-an-item")
+                .font(k.ty.body)
+                .color(k.c.text_base),
+        ),
+        Card::Failed(error) => (
+            k.c.icon_muted,
+            text(error.clone())
+                .key("failed")
+                .font(k.ty.body)
+                .color(k.c.text_base)
+                .wrap()
+                .w_full(),
+        ),
     }
 }
 
 pub fn view(s: &PriceCheck, cx: &mut Cx<PriceCheck>) -> El {
-    let root = el().key("price-check").w_full().h_full().on_screen_layout(|s: &mut PriceCheck, rect| s.screen = rect);
+    let root = el()
+        .key("price-check")
+        .w_full()
+        .h_full()
+        .on_screen_layout(|s: &mut PriceCheck, rect| s.screen = rect);
     let Some(card) = &s.card else { return root };
     let k = Kit::neutral(true);
     let (accent, body) = card_body(card, &k);
     let (x, y) = card_origin(s.anchor, cx.env().scale, s.screen);
     let card = rune_kit::Card::new().accent(accent).child(body).build(&k);
-    root.child(el().key("card").w(CARD_SIZE.0).radius(k.radius.md).fill(k.c.bg_base).border(1.0, k.c.border_base)
-        .absolute(x, y).hit()
-        // A click hands the card the keyboard, so Esc reaches it.
-        .on_press(|s: &mut PriceCheck| if let Some(surface) = &s.surface { surface.request_keys(); })
-        .child(card))
+    root.child(
+        el().key("card")
+            .w(CARD_SIZE.0)
+            .radius(k.radius.md)
+            .fill(k.c.bg_base)
+            .border(1.0, k.c.border_base)
+            .absolute(x, y)
+            .hit()
+            // A click hands the card the keyboard, so Esc reaches it.
+            .on_press(|s: &mut PriceCheck| {
+                if let Some(surface) = &s.surface {
+                    surface.request_keys();
+                }
+            })
+            .child(card),
+    )
 }
 
 #[cfg(test)]
@@ -179,7 +254,11 @@ mod tests {
     const SAMPLE: &str = "Item Class: Rings\nRarity: Rare\nDoom Loop\nTwo-Stone Ring\n--------\nRequirements:\nLevel: 32\n--------\nItem Level: 84\n";
 
     /// Stands in for the game: Ctrl+C puts `copies` on the clipboard.
-    struct FakeGame { clipboard: MemoryClipboard, copies: &'static str, presses: Rc<Cell<u32>> }
+    struct FakeGame {
+        clipboard: MemoryClipboard,
+        copies: &'static str,
+        presses: Rc<Cell<u32>>,
+    }
     impl KeySender for FakeGame {
         fn send_copy(&mut self) -> Result<(), InputError> {
             self.presses.set(self.presses.get() + 1);
@@ -189,21 +268,35 @@ mod tests {
     }
     struct FakePointer;
     impl PointerLocator for FakePointer {
-        fn pointer(&mut self) -> Option<(i32, i32)> { Some((400, 300)) }
+        fn pointer(&mut self) -> Option<(i32, i32)> {
+            Some((400, 300))
+        }
     }
 
     /// The overlay as its host runs it, with `keys` in place of the game's input.
     fn runtime(clipboard: &MemoryClipboard, keys: Box<dyn KeySender>) -> Runtime<PriceCheck> {
-        let mut rt = Runtime::new(PriceCheck::new(keys, Box::new(FakePointer)), view, (1920.0, 1080.0), Env::new(true, 1.0));
+        let mut rt = Runtime::new(
+            PriceCheck::new(keys, Box::new(FakePointer)),
+            view,
+            (1920.0, 1080.0),
+            Env::new(true, 1.0),
+        );
         rt.on_key = Some(on_key);
         rt.use_clipboard(clipboard);
         rt.frame(0.0);
         rt
     }
 
-    fn overlay(clipboard: &MemoryClipboard, copies: &'static str) -> (Runtime<PriceCheck>, Rc<Cell<u32>>) {
+    fn overlay(
+        clipboard: &MemoryClipboard,
+        copies: &'static str,
+    ) -> (Runtime<PriceCheck>, Rc<Cell<u32>>) {
         let presses = Rc::new(Cell::new(0));
-        let game = FakeGame { clipboard: clipboard.clone(), copies, presses: presses.clone() };
+        let game = FakeGame {
+            clipboard: clipboard.clone(),
+            copies,
+            presses: presses.clone(),
+        };
         (runtime(clipboard, Box::new(game)), presses)
     }
 
@@ -221,7 +314,10 @@ mod tests {
     }
 
     fn text_of(rt: &Runtime<PriceCheck>, key: &str) -> Option<String> {
-        rt.elements().into_iter().find(|e| e.key.as_deref() == Some(key) && !e.exiting).and_then(|e| e.text)
+        rt.elements()
+            .into_iter()
+            .find(|e| e.key.as_deref() == Some(key) && !e.exiting)
+            .and_then(|e| e.text)
     }
 
     #[test]
@@ -236,7 +332,10 @@ mod tests {
         assert_eq!(text_of(&rt, "item-name").as_deref(), Some("Doom Loop"));
         assert_eq!(text_of(&rt, "item-base").as_deref(), Some("Two-Stone Ring"));
 
-        rt.key(KeyEvent { key: Key::Escape, mods: Mods::default() });
+        rt.key(KeyEvent {
+            key: Key::Escape,
+            mods: Mods::default(),
+        });
         run(&mut rt, 0.5);
         assert_eq!(rt.state.card, None);
         assert_eq!(text_of(&rt, "item-name"), None, "the card is gone");
@@ -251,8 +350,16 @@ mod tests {
 
         press_ctrl_d(&mut rt);
         assert_eq!(text_of(&rt, "item-name").as_deref(), Some("Doom Loop"));
-        let after = clipboard.content().map(|c| (c.text().to_owned(), c.html().map(str::to_owned)));
-        assert_eq!(after, Some(("league notes".to_owned(), Some("<b>league</b> notes".to_owned()))));
+        let after = clipboard
+            .content()
+            .map(|c| (c.text().to_owned(), c.html().map(str::to_owned)));
+        assert_eq!(
+            after,
+            Some((
+                "league notes".to_owned(),
+                Some("<b>league</b> notes".to_owned())
+            ))
+        );
     }
 
     #[test]
@@ -270,12 +377,18 @@ mod tests {
         clipboard.set_text(SAMPLE);
         struct Nothing;
         impl KeySender for Nothing {
-            fn send_copy(&mut self) -> Result<(), InputError> { Ok(()) }
+            fn send_copy(&mut self) -> Result<(), InputError> {
+                Ok(())
+            }
         }
         let mut rt = runtime(&clipboard, Box::new(Nothing));
         press_ctrl_d(&mut rt);
         assert_eq!(text_of(&rt, "not-an-item").as_deref(), Some(NOT_AN_ITEM));
-        assert_eq!(clipboard.text().as_deref().map(String::as_str), Some(SAMPLE), "and the old item is back on the clipboard");
+        assert_eq!(
+            clipboard.text().as_deref().map(String::as_str),
+            Some(SAMPLE),
+            "and the old item is back on the clipboard"
+        );
     }
 
     #[test]
@@ -293,8 +406,20 @@ mod tests {
     fn the_card_opens_beside_the_pointer_and_stays_on_the_display() {
         let screen = [0.0, 0.0, 1920.0, 1080.0];
         assert_eq!(card_origin(Some((400, 300)), 1.0, screen), (416.0, 316.0));
-        assert_eq!(card_origin(Some((800, 600)), 2.0, screen), (416.0, 316.0), "pixels become points");
-        assert_eq!(card_origin(Some((1910, 1070)), 1.0, screen), (1600.0, 940.0), "kept clear of the edges");
-        assert_eq!(card_origin(Some((2320, 300)), 1.0, [1920.0, 0.0, 1920.0, 1080.0]), (416.0, 316.0), "on a display right of the primary");
+        assert_eq!(
+            card_origin(Some((800, 600)), 2.0, screen),
+            (416.0, 316.0),
+            "pixels become points"
+        );
+        assert_eq!(
+            card_origin(Some((1910, 1070)), 1.0, screen),
+            (1600.0, 940.0),
+            "kept clear of the edges"
+        );
+        assert_eq!(
+            card_origin(Some((2320, 300)), 1.0, [1920.0, 0.0, 1920.0, 1080.0]),
+            (416.0, 316.0),
+            "on a display right of the primary"
+        );
     }
 }
