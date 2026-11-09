@@ -13,8 +13,8 @@ use serde::Deserialize;
 /// The source every relayed price is attributed to.
 pub const SOURCE: &str = "poe.ninja";
 
-/// `item-*` overviews of stackables priced by name alone, next to the `exchange-*` and
-/// `currency-*` ones. (Everything a Commodity Item can be.)
+/// `item-*` overviews of stackable currency priced by name alone, besides the `exchange-*`
+/// and `currency-*` ones.
 const NAMED_ITEM_CATEGORIES: &[&str] = &["item-Vial", "item-Incubator"];
 
 /// Whether the feed reads `category` (a relay object name such as `exchange-Currency`).
@@ -78,10 +78,6 @@ impl PriceBook {
 
     pub fn divine_rate(&self) -> Option<f64> {
         self.divine_rate.map(|(_, rate)| rate)
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.named.is_empty() && self.gems.is_empty() && self.uniques.is_empty()
     }
 
     /// Adds one relayed category file, fetched (or confirmed unchanged) at `fetched_at`.

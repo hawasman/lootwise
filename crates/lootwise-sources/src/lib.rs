@@ -70,24 +70,14 @@ impl RelayFeed {
                             "lootwise: relay {source}: {category} failed, keeping the cached copy"
                         );
                     }
-                    if !report.downloaded.is_empty() {
-                        let book = load(&cache, &self.league);
-                        *self.book.write().unwrap_or_else(|e| e.into_inner()) = book;
-                    }
+                    // Even with nothing downloaded: the relay's confirmations move `fetchedAt`.
+                    let book = load(&cache, &self.league);
+                    *self.book.write().unwrap_or_else(|e| e.into_inner()) = book;
                 }
                 Err(e) => eprintln!("lootwise: relay unreachable, using cached prices: {e}"),
             }
             tokio::time::sleep(REFRESH_INTERVAL).await;
         }
-    }
-
-    /// Whether the feed has any prices yet.
-    pub fn has_prices(&self) -> bool {
-        !self
-            .book
-            .read()
-            .unwrap_or_else(|e| e.into_inner())
-            .is_empty()
     }
 }
 
