@@ -63,7 +63,7 @@ fn settlers() -> League {
 fn entry(chaos_value: f64, listing_count: u32, fetched_at: SystemTime) -> PriceEntry {
     PriceEntry {
         chaos_value,
-        listing_count,
+        listing_count: Some(listing_count),
         fetched_at,
         source: "poe.ninja".into(),
     }
@@ -93,7 +93,7 @@ fn currency_stack_is_valued_from_the_feed() {
     assert_eq!(valuation.divine_value, Some(1.0));
     assert_eq!(valuation.source, "poe.ninja");
     assert_eq!(valuation.age, Duration::from_secs(600));
-    assert_eq!(valuation.listing_count, 2_500);
+    assert_eq!(valuation.listing_count, Some(2_500));
     assert_eq!(valuation.confidence, Confidence::High);
 }
 
@@ -330,9 +330,35 @@ fn nine_listings_give_low_confidence_and_ten_give_high() {
         CURRENCY_STACK,
     ));
 
-    assert_eq!(nine.listing_count, 9);
+    assert_eq!(nine.listing_count, Some(9));
     assert_eq!(nine.confidence, Confidence::Low);
     assert_eq!(ten.confidence, Confidence::High);
+}
+
+#[test]
+fn a_price_without_a_listing_count_is_judged_by_age_alone() {
+    // Currency Exchange overviews report trade volume, not listings.
+    let league = settlers();
+    let hour = Duration::from_secs(3_600);
+    let unlisted = |now| {
+        let entry = PriceEntry {
+            listing_count: None,
+            ..entry(200.0, 0, t0())
+        };
+        valued(check_with(
+            &league,
+            divine_orb(),
+            entry,
+            now,
+            CURRENCY_STACK,
+        ))
+    };
+    let fresh = unlisted(t0());
+    let stale = unlisted(t0() + hour + Duration::from_secs(1));
+
+    assert_eq!(fresh.listing_count, None);
+    assert_eq!(fresh.confidence, Confidence::High);
+    assert_eq!(stale.confidence, Confidence::Low);
 }
 
 #[test]

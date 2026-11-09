@@ -34,9 +34,11 @@ impl League {
 pub struct PriceEntry {
     /// Price of one unit, in chaos orbs.
     pub chaos_value: f64,
-    /// Listings the price was aggregated from.
-    pub listing_count: u32,
-    /// When the price source produced this price.
+    /// Listings the price was aggregated from, or `None` when the source reports none
+    /// (poe.ninja's Currency Exchange overviews report trade volume, not listings).
+    pub listing_count: Option<u32>,
+    /// When the feed last fetched this price or confirmed it unchanged (the relay
+    /// manifest's `fetchedAt`); a Valuation's age runs from here.
     pub fetched_at: SystemTime,
     /// Where the price came from, e.g. `poe.ninja`.
     pub source: String,
@@ -59,8 +61,8 @@ pub trait Clock {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Confidence {
     High,
-    /// Fewer than [`MIN_CONFIDENT_LISTINGS`] listings, or feed data older than
-    /// [`MAX_CONFIDENT_AGE`].
+    /// Fewer than [`MIN_CONFIDENT_LISTINGS`] listings (when the source reports listings), or
+    /// feed data older than [`MAX_CONFIDENT_AGE`].
     Low,
 }
 
@@ -76,7 +78,8 @@ pub struct Valuation {
     pub source: String,
     /// Age of the feed data at the time of the Price Check.
     pub age: Duration,
-    pub listing_count: u32,
+    /// Listings the price rests on, when the source reports them.
+    pub listing_count: Option<u32>,
     pub confidence: Confidence,
 }
 
@@ -133,8 +136,10 @@ impl<F: PriceFeed, C: Clock> Engine<F, C> {
             .now()
             .duration_since(entry.fetched_at)
             .unwrap_or_default();
-        let confidence = if entry.listing_count < MIN_CONFIDENT_LISTINGS || age > MAX_CONFIDENT_AGE
-        {
+        let thin_market = entry
+            .listing_count
+            .is_some_and(|listings| listings < MIN_CONFIDENT_LISTINGS);
+        let confidence = if thin_market || age > MAX_CONFIDENT_AGE {
             Confidence::Low
         } else {
             Confidence::High
