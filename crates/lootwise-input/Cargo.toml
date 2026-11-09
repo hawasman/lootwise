@@ -1,0 +1,9 @@
+[package]
+name = "lootwise-input"
+version = "0.0.1"
+edition.workspace = true
+license.workspace = true
+description = "Keystroke synthesis and the clipboard copy sequence behind a Price Check."
+
+[dependencies]
+enigo = "0.6.1"
