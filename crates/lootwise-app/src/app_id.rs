@@ -19,10 +19,16 @@ const DESKTOP_FILE: &str = "io.github.hawasman.Lootwise.desktop";
 /// The desktop file as shipped; its `Exec` is replaced by the running binary when installed.
 const DESKTOP_TEMPLATE: &str =
     include_str!("../../../packaging/linux/io.github.hawasman.Lootwise.desktop");
+/// The first line of a desktop file Lootwise installed: only such a file is ever replaced, so
+/// one the player wrote, or another tool installed, is kept.
+const INSTALLED_MARK: &str = "# Installed by Lootwise, which rewrites this file when its binary \
+     moves. Delete this line to keep your own edits.";
 /// How long systemd gets to put Lootwise in its new scope.
-const SCOPE_WAIT: Duration = Duration::from_secs(2);
+const SCOPE_WAIT: Duration = Duration::from_secs(1);
 const SCOPE_POLL: Duration = Duration::from_millis(20);
-const DBUS_TIMEOUT: Duration = Duration::from_secs(5);
+/// How long the user's bus gets to answer: a working one answers in milliseconds, and startup
+/// waits for it.
+const DBUS_TIMEOUT: Duration = Duration::from_secs(1);
 
 /// Gives Lootwise its app id: reports it to Rune (so its overlays carry it as their Wayland
 /// `app_id`), installs the desktop file and enters the scope, logging what happened. Failures
@@ -40,6 +46,11 @@ pub fn establish() {
         Ok((DesktopFile::Current, _)) => {}
         Ok((DesktopFile::Installed, path)) => eprintln!("lootwise: installed {}", path.display()),
         Ok((DesktopFile::Updated, path)) => eprintln!("lootwise: updated {}", path.display()),
+        Ok((DesktopFile::Foreign, path)) => eprintln!(
+            "lootwise: kept {}, which Lootwise didn't install; delete it to have Lootwise \
+             install its own",
+            path.display()
+        ),
         Err(e) => eprintln!("lootwise: can't install the desktop file: {e}"),
     }
     match ensure_scope(
@@ -83,12 +94,15 @@ fn desktop_dir() -> Option<PathBuf> {
 #[derive(Debug, PartialEq, Eq)]
 enum DesktopFile {
     Installed,
-    /// One was there, launching something else or out of date.
+    /// One Lootwise installed was there, launching something else or out of date.
     Updated,
     Current,
+    /// One Lootwise didn't install was there, and was kept.
+    Foreign,
 }
 
-/// Writes the desktop file into `dir` unless an identical one is there.
+/// Writes the desktop file into `dir` unless an identical one, or one Lootwise didn't install,
+/// is there.
 fn ensure_desktop_file(dir: &Path, exe: &Path) -> Result<DesktopFile, String> {
     let exe = exe
         .to_str()
@@ -97,26 +111,32 @@ fn ensure_desktop_file(dir: &Path, exe: &Path) -> Result<DesktopFile, String> {
     let path = dir.join(DESKTOP_FILE);
     let outcome = match std::fs::read_to_string(&path) {
         Ok(existing) if existing == wanted => return Ok(DesktopFile::Current),
-        Ok(_) => DesktopFile::Updated,
+        Ok(existing) if existing.lines().next() == Some(INSTALLED_MARK) => DesktopFile::Updated,
+        Ok(_) => return Ok(DesktopFile::Foreign),
+        // Not UTF-8: not one Lootwise wrote.
+        Err(e) if e.kind() == io::ErrorKind::InvalidData => return Ok(DesktopFile::Foreign),
         Err(e) if e.kind() == io::ErrorKind::NotFound => DesktopFile::Installed,
-        // Unreadable (not UTF-8, say): replace it.
-        Err(_) => DesktopFile::Updated,
+        Err(e) => return Err(format!("{}: {e}", path.display())),
     };
+    // Through a temporary file, so the desktop never reads half a file; named for this
+    // process, so two Lootwise starting together don't write into one.
+    let partial = dir.join(format!(".{DESKTOP_FILE}.{}.partial", std::process::id()));
     let write = || -> io::Result<()> {
         std::fs::create_dir_all(dir)?;
-        // Through a temporary file, so the desktop never reads half a file.
-        let partial = dir.join(format!(".{DESKTOP_FILE}.partial"));
         std::fs::write(&partial, &wanted)?;
         std::fs::rename(&partial, &path)
     };
-    write().map_err(|e| format!("{}: {e}", path.display()))?;
+    write().map_err(|e| {
+        let _ = std::fs::remove_file(&partial);
+        format!("{}: {e}", path.display())
+    })?;
     Ok(outcome)
 }
 
-/// The shipped desktop file, launching `exe`.
+/// The shipped desktop file, launching `exe`, marked as installed by Lootwise.
 fn desktop_entry(exe: &str) -> String {
-    DESKTOP_TEMPLATE
-        .lines()
+    std::iter::once(INSTALLED_MARK)
+        .chain(DESKTOP_TEMPLATE.lines())
         .map(|line| {
             if line.starts_with("Exec=") {
                 format!("Exec={}\n", exec_program(exe))
@@ -345,18 +365,32 @@ mod tests {
         let outcome = ensure_desktop_file(&apps, Path::new("/opt/lootwise/lootwise"));
         assert_eq!(outcome, Ok(DesktopFile::Installed));
         let file = installed(&apps);
-        assert!(file.starts_with("[Desktop Entry]\n"));
+        assert!(file.starts_with(&format!("{INSTALLED_MARK}\n[Desktop Entry]\n")));
         assert!(file.contains("\nName=Lootwise\n"));
         assert!(file.contains("\nExec=/opt/lootwise/lootwise\n"), "{file}");
     }
 
     #[test]
-    fn a_stale_desktop_file_is_replaced() {
+    fn a_stale_desktop_file_lootwise_installed_is_replaced() {
         let dir = tempfile::tempdir().unwrap();
         ensure_desktop_file(dir.path(), Path::new("/old/build/lootwise")).unwrap();
         let outcome = ensure_desktop_file(dir.path(), Path::new("/new/build/lootwise"));
         assert_eq!(outcome, Ok(DesktopFile::Updated));
         assert!(installed(dir.path()).contains("\nExec=/new/build/lootwise\n"));
+    }
+
+    #[test]
+    fn a_desktop_file_lootwise_didnt_install_is_kept() {
+        let dir = tempfile::tempdir().unwrap();
+        let own = "[Desktop Entry]\nType=Application\nName=My Lootwise\nExec=lootwise --x\n";
+        std::fs::write(dir.path().join(DESKTOP_FILE), own).unwrap();
+        let outcome = ensure_desktop_file(dir.path(), Path::new("/opt/lootwise/lootwise"));
+        assert_eq!(outcome, Ok(DesktopFile::Foreign));
+        assert_eq!(installed(dir.path()), own);
+
+        std::fs::write(dir.path().join(DESKTOP_FILE), b"\xff\xfe").unwrap();
+        let outcome = ensure_desktop_file(dir.path(), Path::new("/opt/lootwise/lootwise"));
+        assert_eq!(outcome, Ok(DesktopFile::Foreign), "not UTF-8");
     }
 
     #[test]
