@@ -5,7 +5,7 @@ mod header;
 mod price_check;
 
 use lootwise_input::EnigoInput;
-use price_check::PriceCheck;
+use price_check::PriceCheckOverlay;
 use rune::{
     App, AppSpec, Cx, DisplayTarget, El, KeyPolicy, OverlayHandle, OverlayInput, OverlayOptions,
     OverlayPlacement, OverlaySpec, Tray, TrayEvent, TrayIcon, TrayItem, TraySpec, Tx, el,
@@ -15,7 +15,7 @@ const QUIT: &str = "quit";
 
 /// The windowless app's state: the way to the overlay.
 struct Lootwise {
-    overlay: OverlayHandle<PriceCheck>,
+    overlay: OverlayHandle<PriceCheckOverlay>,
 }
 
 fn no_window(_: &Lootwise, _: &mut Cx<Lootwise>) -> El {
@@ -70,7 +70,7 @@ fn main() {
         })
         .poll(price_check::poll)
         .on_key(price_check::on_key),
-        PriceCheck::new(input(), input()),
+        PriceCheckOverlay::new(input(), input()),
     );
     let surface = overlay.clone();
     overlay.update(move |s, _| s.attach(surface));

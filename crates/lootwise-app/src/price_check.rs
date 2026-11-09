@@ -34,7 +34,7 @@ impl CardContent {
 }
 
 /// The overlay's state.
-pub struct PriceCheck {
+pub struct PriceCheckOverlay {
     keys: Box<dyn KeySender>,
     pointer: Box<dyn PointerLocator>,
     copy: ClipboardCopy<ClipboardContent>,
@@ -44,10 +44,10 @@ pub struct PriceCheck {
     /// The overlay's rect in global points, from `on_screen_layout`.
     screen: [f32; 4],
     /// The native overlay, absent in headless runs.
-    surface: Option<OverlayHandle<PriceCheck>>,
+    surface: Option<OverlayHandle<PriceCheckOverlay>>,
 }
 
-impl PriceCheck {
+impl PriceCheckOverlay {
     pub fn new(keys: Box<dyn KeySender>, pointer: Box<dyn PointerLocator>) -> Self {
         Self {
             keys,
@@ -61,7 +61,7 @@ impl PriceCheck {
     }
 
     /// Lets the overlay show and hide its native surface.
-    pub fn attach(&mut self, surface: OverlayHandle<PriceCheck>) {
+    pub fn attach(&mut self, surface: OverlayHandle<PriceCheckOverlay>) {
         self.surface = Some(surface);
     }
 
@@ -81,7 +81,7 @@ impl PriceCheck {
 }
 
 /// Ctrl+D: close an open card, else start a Price Check of the item under the pointer.
-pub fn shortcut(s: &mut PriceCheck, tx: &mut Tx) {
+pub fn shortcut(s: &mut PriceCheckOverlay, tx: &mut Tx) {
     if s.card.is_some() {
         s.hide();
         return;
@@ -91,7 +91,7 @@ pub fn shortcut(s: &mut PriceCheck, tx: &mut Tx) {
     }
     // Before the copy's delays, so a mouse moved meanwhile doesn't drag the card off the item.
     s.anchor = s.pointer.pointer();
-    tx.read_clipboard(|s: &mut PriceCheck, saved, tx| {
+    tx.read_clipboard(|s: &mut PriceCheckOverlay, saved, tx| {
         if let Some(due) = s.copy.saved(saved.clone(), tx.clock()) {
             tx.copy("");
             tx.wake_at(due);
@@ -100,7 +100,7 @@ pub fn shortcut(s: &mut PriceCheck, tx: &mut Tx) {
 }
 
 /// Before every frame and at each deadline the sequence asked for.
-pub fn poll(s: &mut PriceCheck, clock: f64, tx: &mut Tx) -> bool {
+pub fn poll(s: &mut PriceCheckOverlay, clock: f64, tx: &mut Tx) -> bool {
     match s.copy.tick(clock, s.keys.as_mut()) {
         Tick::Idle => false,
         Tick::WakeAt(due) => {
@@ -108,7 +108,7 @@ pub fn poll(s: &mut PriceCheck, clock: f64, tx: &mut Tx) -> bool {
             false
         }
         Tick::ReadClipboard => {
-            tx.read_clipboard(|s: &mut PriceCheck, copied, tx| {
+            tx.read_clipboard(|s: &mut PriceCheckOverlay, copied, tx| {
                 let Some(saved) = s.copy.read() else { return };
                 tx.copy_rich(saved);
                 s.show(CardContent::from_clipboard(copied.text()));
@@ -124,7 +124,7 @@ pub fn poll(s: &mut PriceCheck, clock: f64, tx: &mut Tx) -> bool {
 }
 
 /// The overlay's keys, once it has them: Esc closes the card, everything else passes.
-pub fn on_key(s: &mut PriceCheck, ev: &KeyEvent, _: &mut Tx) -> bool {
+pub fn on_key(s: &mut PriceCheckOverlay, ev: &KeyEvent, _: &mut Tx) -> bool {
     if ev.key != Key::Escape || s.card.is_none() {
         return false;
     }
@@ -215,12 +215,12 @@ fn card_body(card: &CardContent, k: &Kit) -> (Color, El) {
     }
 }
 
-pub fn view(s: &PriceCheck, cx: &mut Cx<PriceCheck>) -> El {
+pub fn view(s: &PriceCheckOverlay, cx: &mut Cx<PriceCheckOverlay>) -> El {
     let root = el()
         .key("price-check")
         .w_full()
         .h_full()
-        .on_screen_layout(|s: &mut PriceCheck, rect| s.screen = rect);
+        .on_screen_layout(|s: &mut PriceCheckOverlay, rect| s.screen = rect);
     let Some(card) = &s.card else { return root };
     let k = Kit::neutral(true);
     let (accent, body) = card_body(card, &k);
@@ -235,7 +235,7 @@ pub fn view(s: &PriceCheck, cx: &mut Cx<PriceCheck>) -> El {
             .absolute(x, y)
             .hit()
             // A click hands the card the keyboard, so Esc reaches it.
-            .on_press(|s: &mut PriceCheck| {
+            .on_press(|s: &mut PriceCheckOverlay| {
                 if let Some(surface) = &s.surface {
                     surface.request_keys();
                 }
@@ -276,9 +276,12 @@ mod tests {
     }
 
     /// The overlay as its host runs it, with `keys` in place of the game's input.
-    fn runtime(clipboard: &MemoryClipboard, keys: Box<dyn KeySender>) -> Runtime<PriceCheck> {
+    fn runtime(
+        clipboard: &MemoryClipboard,
+        keys: Box<dyn KeySender>,
+    ) -> Runtime<PriceCheckOverlay> {
         let mut rt = Runtime::new(
-            PriceCheck::new(keys, Box::new(FakePointer)),
+            PriceCheckOverlay::new(keys, Box::new(FakePointer)),
             view,
             (1920.0, 1080.0),
             Env::new(true, 1.0),
@@ -292,7 +295,7 @@ mod tests {
     fn overlay(
         clipboard: &MemoryClipboard,
         copies: &'static str,
-    ) -> (Runtime<PriceCheck>, Rc<Cell<u32>>) {
+    ) -> (Runtime<PriceCheckOverlay>, Rc<Cell<u32>>) {
         let presses = Rc::new(Cell::new(0));
         let game = FakeGame {
             clipboard: clipboard.clone(),
@@ -303,19 +306,19 @@ mod tests {
     }
 
     /// Frames for `seconds`, polling before each as the overlay host does.
-    fn run(rt: &mut Runtime<PriceCheck>, seconds: f64) {
+    fn run(rt: &mut Runtime<PriceCheckOverlay>, seconds: f64) {
         for _ in 0..(seconds * 60.0).ceil() as u32 {
             rt.update_if(|s, tx| poll(s, tx.clock(), tx));
             rt.frame(1.0 / 60.0);
         }
     }
 
-    fn press_ctrl_d(rt: &mut Runtime<PriceCheck>) {
+    fn press_ctrl_d(rt: &mut Runtime<PriceCheckOverlay>) {
         rt.update(shortcut);
         run(rt, 0.5);
     }
 
-    fn text_of(rt: &Runtime<PriceCheck>, key: &str) -> Option<String> {
+    fn text_of(rt: &Runtime<PriceCheckOverlay>, key: &str) -> Option<String> {
         rt.elements()
             .into_iter()
             .find(|e| e.key.as_deref() == Some(key) && !e.exiting)
@@ -441,7 +444,7 @@ mod tests {
             presses: Rc::default(),
         };
         let mut rt = Runtime::new(
-            PriceCheck::new(Box::new(game), Box::new(Mouse(at.clone()))),
+            PriceCheckOverlay::new(Box::new(game), Box::new(Mouse(at.clone()))),
             view,
             (1920.0, 1080.0),
             Env::new(true, 1.0),
