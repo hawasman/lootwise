@@ -1,0 +1,20 @@
+name = "lootwise-relay"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+# One trigger per covered League (ADR 0004). poe.ninja refreshes PoE1 overviews
+# roughly every 15 minutes. The two schedules are offset so their poe.ninja
+# requests do not land at the same moment.
+[triggers]
+crons = ["0,15,30,45 * * * *", "7,22,37,52 * * * *"]
+
+# Which League each cron trigger relays. Keys must match `triggers.crons`
+# exactly. "@current" is resolved at run time to the current challenge League
+# (the first entry of poe.ninja's PoE1 economy leagues endpoint).
+[vars.LEAGUE_BY_CRON]
+"0,15,30,45 * * * *" = "@current"
+"7,22,37,52 * * * *" = "Standard"
+
+[[r2_buckets]]
+binding = "PRICES"
+bucket_name = "lootwise-prices"

@@ -1,0 +1,15 @@
+Item Class: Life Flasks
+Rarity: Magic
+Experimenter's Divine Life Flask of the Rainbow
+--------
+Quality: +20% (augmented)
+Recovers 2400 Life over 7 Seconds
+Consumes 15 of 45 Charges on use
+Currently has 45 Charges
+--------
+Requirements:
+Level: 60
+--------
+Item Level: 81
+--------
+Right click to drink. Can only hold charges while in belt. Refills as you kill monsters.
