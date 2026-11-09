@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lootwise · design 2 · Navigator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#f1f3ee; --surface:#ffffff; --raised:#f6f7f4; --active:#e6e9e3;
+  --border:#e3e6e0; --rule:#eef0ec; --control:#c9ccc5;
+  --text:#131416; --muted:#5b5e5c; --accent:#1b6c80; --accent-ink:#13505f;
+  --positive:#1e7b4f; --negative:#c4242a; --warning:#92400e;
+  --pill-positive-bg:#dcfae5; --pill-positive-ink:#04250e;
+  --pill-negative-bg:#ffedea; --pill-negative-ink:#831c1e;
+  --pill-warning-bg:#fffbeb; --pill-warning-ink:#92400e; --warn-border:#fde68a;
+  --pill-neutral-bg:#e6e9e3; --pill-neutral-ink:#353736;
+  --r-card:8px; --r-control:6px; --r-sheet:16px; --gap:24px; --pad:24px;
+  --font:"IBM Plex Sans",Inter,system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0}
+html{background:#dcdfd8}
+body{font:400 14px/20px var(--font);color:var(--text);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+.muted{color:var(--muted)}
+
+/* demo stage ------------------------------------------------------ */
+.viewer{width:100%;overflow:hidden;padding:16px 16px 20px}
+.stage{width:1280px;margin:0 auto}
+.demo{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin-bottom:12px;align-items:center}
+.demo h1{grid-column:1/-1;font-size:14px;font-weight:600;display:flex;gap:10px;align-items:baseline}
+.demo h1 span{font-weight:400;color:var(--muted)}
+.demo .lbl{font-size:12px;color:var(--muted)}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{height:26px;padding:0 10px;border-radius:6px;font-size:12px;color:#3d403e;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.chip:hover{background:#cfd3cb}
+.chip[aria-current=true]{background:#131416;color:#fff}
+.chip .kc{opacity:.7}
+.winwrap{width:1280px;height:800px;position:relative;border-radius:12px;overflow:hidden;border:1px solid #c5c9c0;background:var(--ground)}
+.legend{margin-top:10px;font-size:12px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap}
+.kc{font:500 11px/16px var(--mono);border:1px solid var(--control);border-radius:4px;padding:0 5px;color:var(--muted);background:var(--surface);display:inline-block;min-width:18px;text-align:center}
+.chip[aria-current=true] .kc{background:transparent;color:#d8dbd5;border-color:#6a6d6b}
+
+/* app shell: tinted L-frame, white sheet inset 8px ----------------- */
+.app{display:grid;grid-template-columns:220px 1fr;grid-template-rows:48px 1fr;width:1280px;height:798px;background:var(--ground)}
+.side{grid-row:1/3;display:flex;flex-direction:column;padding:14px 10px 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px;height:36px}
+.mark{width:26px;height:26px;flex:none}
+.brand b{font-weight:600;font-size:15px}
+.scopeline{padding:2px 8px 14px 44px;font-size:12px;color:var(--muted);margin-top:-6px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{height:34px;display:flex;align-items:center;gap:10px;padding:0 8px;border-radius:8px;color:#454846;text-align:left;width:100%}
+.nav button:hover{background:#e9ece6}
+.nav button[aria-current=page]{background:var(--active);color:var(--text);font-weight:500}
+.nav button svg{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.nav button .kc{margin-left:auto;background:transparent;border-color:transparent}
+.nav button:hover .kc,.nav button[aria-current=page] .kc{border-color:var(--control);background:var(--surface)}
+.sidefoot{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.live{border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:10px 12px;text-align:left;width:100%;display:block}
+.live:hover{border-color:var(--control)}
+.live .t{display:flex;align-items:center;gap:8px;font-weight:500}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--positive);flex:none}
+.dot.off{background:#9a9d98}.dot.warn{background:#b45309}
+.live .s{font-size:12px;color:var(--muted);margin-top:2px}
+.acct{padding:0 8px;font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.top{display:flex;align-items:center;gap:12px;padding:0 16px 0 20px}
+.sel{height:32px;border:1px solid var(--control);background:var(--surface);border-radius:var(--r-control);padding:0 10px;display:inline-flex;align-items:center;gap:8px;font-size:14px}
+.sel svg{width:12px;height:12px;stroke:var(--muted);fill:none;stroke-width:1.5}
+.top .sp{margin-left:auto}
+.stamp{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:8px}
+.sheet{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sheet);margin:0 8px 8px 0;overflow:auto;padding:24px var(--pad) 24px;position:relative}
+.sheet.flush{padding:0;display:grid;grid-template-columns:420px 1fr;overflow:hidden}
+.titlerow{display:flex;align-items:flex-end;gap:16px;margin-bottom:16px}
+.titlerow h2{font-size:22px;line-height:28px;font-weight:600;letter-spacing:-.01em}
+.titlerow p{color:var(--muted);margin-top:2px}
+.titlerow .act{margin-left:auto;display:flex;gap:8px}
+h3{font-size:16px;line-height:22px;font-weight:600}
+.btn{height:32px;padding:0 12px;border-radius:var(--r-control);border:1px solid var(--control);background:var(--surface);display:inline-flex;align-items:center;gap:8px;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:#8c8f8a}
+.btn.primary{background:#1d1f20;border-color:#1d1f20;color:#fff}
+.btn.primary:hover{background:#34373a}
+.btn.sm{height:28px;padding:0 10px;font-size:13px}
+.btn[disabled]{color:#6b6e6b;background:var(--raised);border-color:var(--border);cursor:not-allowed}
+.link{color:var(--accent-ink);font-weight:500}
+.link:hover{text-decoration:underline}
+.card{border:1px solid var(--border);border-radius:var(--r-card);padding:20px;background:var(--surface)}
+.card>header{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.card>header .r{margin-left:auto;font-size:12px;color:var(--muted);display:flex;gap:10px;align-items:baseline}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:var(--gap)}
+.grid2+.grid2{margin-top:var(--gap)}
+.fig{font-size:32px;line-height:38px;font-weight:500;letter-spacing:-.01em}
+u{text-decoration:none}
+.fig u,.fig2 u,.u{text-decoration:none;font-size:14px;color:var(--muted);font-weight:400;letter-spacing:0;margin-left:4px}
+.fig2{font-size:24px;line-height:30px;font-weight:500}
+.delta{font-size:13px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:500;flex:none;white-space:nowrap;background:var(--pill-neutral-bg);color:var(--pill-neutral-ink)}
+.pill.pos{background:var(--pill-positive-bg);color:var(--pill-positive-ink)}
+.pill.warn{background:var(--pill-warning-bg);color:var(--pill-warning-ink);border:1px solid var(--warn-border)}
+.pill.neg{background:var(--pill-negative-bg);color:var(--pill-negative-ink)}
+.seg{display:inline-flex;background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:2px;gap:2px}
+.seg button{height:26px;padding:0 10px;border-radius:6px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed=true]{background:#fff;color:var(--text);font-weight:500;border:1px solid var(--border)}
+.notice{border:1px solid var(--warn-border);background:var(--pill-warning-bg);color:var(--pill-warning-ink);border-radius:8px;padding:8px 12px;font-size:13px;display:flex;gap:12px;align-items:center;margin-bottom:16px}
+.notice .link{color:var(--pill-warning-ink);text-decoration:underline;margin-left:auto}
+.notice.in{margin-bottom:12px}
+.empty{border:1px dashed var(--control);border-radius:8px;min-height:38px;display:flex;align-items:center;justify-content:center;color:var(--muted);padding:8px 14px;text-align:center}
+
+/* lists / tables */
+.rows{display:flex;flex-direction:column}
+.row{display:grid;align-items:center;column-gap:12px;min-height:44px;border-top:1px solid var(--rule)}
+.row:first-child{border-top:0}
+.row .n{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .s{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r{text-align:right}
+table{border-collapse:collapse;width:100%}
+th{font-size:12px;font-weight:400;color:var(--muted);text-align:left;height:36px;padding:0 0 0 0;white-space:nowrap}
+th.r,td.r{text-align:right}
+td{height:40px;border-top:1px solid var(--rule);padding:0}
+thead th{border-bottom:1px solid var(--border)}
+tbody tr:first-child td{border-top:0}
+.sort{font-size:10px;margin-left:4px;color:var(--text)}
+.gr td{color:var(--muted)}
+.bar{height:2px;background:var(--rule);margin-top:6px;position:relative;border-radius:1px}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:#b5b9b3;border-radius:1px}
+.bar i.top{background:var(--accent)}
+.sk{display:inline-block;background:#e4e6e1;border-radius:4px;vertical-align:middle}
+
+/* master-detail */
+.master{border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.master .hd{padding:24px 20px 12px}
+.master .hd h2{font-size:22px;line-height:28px;font-weight:600;letter-spacing:-.01em}
+.master .hd p{color:var(--muted);margin:2px 0 14px}
+.mlist{overflow:auto;padding:0 10px 14px;flex:1}
+.mrow{display:grid;grid-template-columns:1fr auto;column-gap:12px;align-items:center;padding:0 10px;height:52px;border-radius:8px;width:100%;text-align:left}
+.mrow:hover{background:var(--raised)}
+.mrow[aria-selected=true]{background:var(--active)}
+.mrow .n{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .s{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .v{text-align:right;font-weight:500}
+.mrow .v small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.detail{overflow:auto;padding:28px var(--pad) 24px;min-width:0}
+.dgrid{display:grid;grid-template-columns:auto 1fr;gap:var(--gap)}
+.well{background:var(--raised);border-radius:8px;padding:6px 16px}
+.kv{display:flex;justify-content:space-between;gap:16px;min-height:32px;align-items:center;border-top:1px solid var(--rule)}
+.kv:first-child{border-top:0}
+.kv span:first-child{color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+
+/* settings */
+.fld{height:32px;border:1px solid var(--control);background:#fff;border-radius:var(--r-control);padding:0 10px;display:inline-flex;align-items:center;gap:6px}
+.sw{width:28px;height:16px;border-radius:8px;background:#9a9d98;position:relative;flex:none}
+.sw::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;background:#fff;border-radius:50%}
+.sw.on{background:#1d1f20}.sw.on::after{left:14px}
+.cb{width:16px;height:16px;border:1.5px solid #6b6e6b;border-radius:3px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:#fff}
+.cb.on{background:#1d1f20;border-color:#1d1f20}
+.cb.on::after{content:"";width:8px;height:4px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.sec{display:grid;grid-template-columns:260px 1fr;gap:32px;padding:20px 0;border-top:1px solid var(--rule)}
+.sec:first-child{border-top:0;padding-top:0}
+.sec .l p{color:var(--muted);margin-top:4px}
+.panel{background:#f8f9f6;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.prow{display:flex;align-items:center;gap:12px;min-height:32px}
+.prow .t{font-weight:500}
+.prow .d{color:var(--muted);font-size:13px}
+.prow .end{margin-left:auto;display:flex;gap:8px;align-items:center}
+.steps{display:flex;flex-direction:column;gap:var(--gap);max-width:760px}
+.step{display:grid;grid-template-columns:28px 1fr;gap:16px}
+.step .ix{width:28px;height:28px;border-radius:50%;border:1px solid var(--control);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:13px}
+.step.cur .ix{background:#1d1f20;color:#fff;border-color:#1d1f20}
+.step .b{display:flex;flex-direction:column;gap:12px}
+.step .b>p{color:var(--muted)}
+.prog{height:4px;border-radius:2px;background:var(--rule);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent)}
+.tabrow{display:grid;grid-template-columns:20px 1fr auto;column-gap:12px;align-items:center;min-height:44px;padding:0 10px;border-radius:8px;width:100%;text-align:left}
+.tabrow:hover{background:var(--raised)}
+.tabrow[aria-selected=true]{background:var(--active)}
+.tabrow .cbx{display:flex}
+
+/* ---------- overlay card (the product's own surface) ---------- */
+.ocard{width:320px;background:#fff;border:1px solid #cfd3cb;border-radius:12px;padding:16px;box-shadow:0 8px 24px rgba(19,20,22,.22);color:var(--text);font-size:14px;text-align:left;display:flex;flex-direction:column;gap:12px}
+.ocard .nm{font-size:16px;line-height:22px;font-weight:600}
+.ocard .sub{font-size:12px;color:var(--muted);margin-top:1px}
+.ocard .pr{display:flex;align-items:baseline;gap:14px}
+.ocard .pr .big{font-size:30px;line-height:34px;font-weight:500;letter-spacing:-.01em}
+.ocard .pr .big u{font-size:14px;color:var(--muted);text-decoration:none;margin-left:4px;letter-spacing:0}
+.ocard .pr .dv{font-size:18px;font-weight:500;margin-left:auto;text-align:right}
+.ocard .pr .dv u{font-size:12px;color:var(--muted);text-decoration:none;margin-left:4px;font-weight:400}
+.ocard .meta{border-top:1px solid var(--rule)}
+.ocard .meta .kv{min-height:30px}
+.ocard .foot{display:flex;align-items:center;gap:10px;border-top:1px solid var(--rule);padding-top:10px;margin-top:-2px}
+.ocard .foot .kc{margin-left:auto}
+.ocard .trend{display:flex;flex-direction:column;gap:4px}
+.ocard .trend .tt{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.ocard .msg{background:var(--raised);border-radius:8px;padding:12px;color:var(--text)}
+.ocard .msg b{display:block;font-weight:600;margin-bottom:2px}
+.ocard .msg.warnmsg{background:var(--pill-warning-bg);border:1px solid var(--warn-border);color:var(--pill-warning-ink)}
+.ocard .filt{display:grid;grid-template-columns:16px 1fr auto;column-gap:10px;align-items:center;min-height:34px;border-top:1px solid var(--rule)}
+.ocard .filt.off{color:var(--muted)}
+.ocard .filt .roll{font-size:12px;color:var(--muted);display:block}
+.ocard .nf{height:26px;min-width:52px;border:1px solid var(--control);border-radius:6px;padding:0 8px;display:inline-flex;align-items:center;justify-content:flex-end;font-weight:500;background:#fff}
+.ocard .off .nf{background:var(--raised);border-color:var(--border);color:#6b6e6b}
+.ocard .gemrow{display:grid;grid-template-columns:1fr auto;column-gap:12px;align-items:center;min-height:50px;border-top:1px solid var(--rule)}
+.ocard .gemrow:first-of-type{border-top:0}
+.ocard .gemrow .n{font-weight:500}
+.ocard .gemrow .s{font-size:12px;color:var(--muted)}
+.ocard .gemrow .v{text-align:right;font-weight:500}
+.ocard .gemrow .v small{display:block;font-size:12px;color:var(--muted);font-weight:400}
+.ocard .gemrow.best{background:var(--raised);margin:0 -16px;padding:0 16px;border-top-color:transparent}
+.ocard .gemrow.unk .n{color:var(--muted);font-weight:400}
+.ocard .btns{display:flex;gap:8px}
+.ocard .btns .btn{flex:1;justify-content:center}
+.hist-pane{display:grid;grid-template-columns:368px 1fr;gap:var(--gap);align-items:start}
+.hist-pane .kv span{white-space:nowrap}
+.cardwell{background:var(--ground);border-radius:12px;padding:24px;display:flex;justify-content:center;flex:none}
+.cardwell .ocard{box-shadow:none}
+
+/* game stand-in */
+.game{position:absolute;inset:0;background:#15171b;overflow:hidden}
+.game svg.bg{position:absolute;inset:0}
+.gamecard{position:absolute}
+.gamehud{position:absolute;left:180px;bottom:18px;font-size:12px;color:#8e929a}
+.esc{position:absolute;right:20px;bottom:16px;font-size:12px;color:#8e929a;display:flex;gap:8px;align-items:center}
+.esc .kc{background:transparent;border-color:#4a4e55;color:#aab}
+.skeleton-line{height:14px}
+.sr{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<div class="viewer"><div class="stage">
+  <div class="demo">
+    <h1>Lootwise <span>Design 2 · Navigator — five destinations, one key each. This bar is the viewer, not the app.</span></h1>
+    <div class="lbl">Destinations</div><div class="chips" id="g-screen"></div>
+    <div class="lbl">States</div><div class="chips" id="g-state"></div>
+    <div class="lbl">Overlays</div><div class="chips" id="g-overlay"></div>
+  </div>
+  <div class="winwrap" id="win"></div>
+  <div class="legend">
+    <span><span class="kc">1</span>–<span class="kc">5</span> go to a destination</span>
+    <span><span class="kc">[</span> <span class="kc">]</span> step through every surface in this viewer</span>
+    <span><span class="kc">↑</span> <span class="kc">↓</span> choose in a list</span>
+    <span><span class="kc">Esc</span> close an overlay</span>
+  </div>
+</div></div>
+<script>
+const D = {
+ "divine": 502.5,
+ "league": "Allflame",
+ "updatedAt": "2026-11-09T12:52:21.172Z",
+ "total": 15668,
+ "tabs": [
+  {
+   "name": "Currency",
+   "rows": [
+    {
+     "name": "Divine Orb",
+     "qty": 11,
+     "unit": 502.5,
+     "total": 5528
+    },
+    {
+     "name": "Orb of Annulment",
+     "qty": 34,
+     "unit": 21.45,
+     "total": 729
+    },
+    {
+     "name": "Ancient Orb",
+     "qty": 18,
+     "unit": 20.03,
+     "total": 361
+    },
+    {
+     "name": "Exalted Orb",
+     "qty": 212,
+     "unit": 5.16,
+     "total": 1094
+    },
+    {
+     "name": "Gemcutter's Prism",
+     "qty": 96,
+     "unit": 4.62,
+     "total": 444
+    },
+    {
+     "name": "Orb of Alchemy",
+     "qty": 400,
+     "unit": 0.335,
+     "total": 134
+    }
+   ],
+   "total": 8290
+  },
+  {
+   "name": "Scarabs",
+   "rows": [
+    {
+     "name": "Horned Scarab of Bloodlines",
+     "qty": 2,
+     "unit": 118.6,
+     "total": 237
+    },
+    {
+     "name": "Ultimatum Scarab of Catalysing",
+     "qty": 3,
+     "unit": 93.33,
+     "total": 280
+    },
+    {
+     "name": "Harvest Scarab of Cornucopia",
+     "qty": 4,
+     "unit": 60.48,
+     "total": 242
+    },
+    {
+     "name": "Kalguuran Scarab of Refinement",
+     "qty": 6,
+     "unit": 45.54,
+     "total": 273
+    },
+    {
+     "name": "Breach Scarab of Resonant Cascade",
+     "qty": 5,
+     "unit": 24.41,
+     "total": 122
+    }
+   ],
+   "total": 1154
+  },
+  {
+   "name": "Fragments",
+   "rows": [
+    {
+     "name": "Voidborn Reliquary Key",
+     "qty": 1,
+     "unit": 2547,
+     "total": 2547
+    },
+    {
+     "name": "Devouring Fragment",
+     "qty": 2,
+     "unit": 905.2,
+     "total": 1810
+    },
+    {
+     "name": "Essence of Horror",
+     "qty": 3,
+     "unit": 80.09,
+     "total": 240
+    },
+    {
+     "name": "Deafening Essence of Scorn",
+     "qty": 4,
+     "unit": 66.61,
+     "total": 266
+    }
+   ],
+   "total": 4863
+  },
+  {
+   "name": "Gear",
+   "rows": [
+    {
+     "name": "Doppelgänger Guise",
+     "qty": 1,
+     "unit": 380,
+     "total": 380
+    },
+    {
+     "name": "Aegis Aurora",
+     "qty": 1,
+     "unit": 300,
+     "total": 300
+    },
+    {
+     "name": "Loreweave",
+     "qty": 1,
+     "unit": 223.2,
+     "total": 223
+    },
+    {
+     "name": "Doryani's Prototype",
+     "qty": 1,
+     "unit": 158,
+     "total": 158
+    },
+    {
+     "name": "Kaom's Heart",
+     "qty": 1,
+     "unit": 150,
+     "total": 150
+    },
+    {
+     "name": "Soulrend of Reaping 20/20c",
+     "qty": 1,
+     "unit": 150,
+     "total": 150
+    }
+   ],
+   "unpriced": 9,
+   "total": 1361
+  },
+  {
+   "name": "Dump",
+   "removeOnly": true,
+   "rows": [],
+   "unpriced": 0,
+   "total": 0
+  }
+ ],
+ "doppel": {
+  "name": "Doppelgänger Guise",
+  "base": "Sadist Garb",
+  "chaos": 380,
+  "div": 0.76,
+  "listings": 273,
+  "spark": [
+   252.01,
+   277.01,
+   277.01,
+   262.01,
+   300.01,
+   300.01,
+   380
+  ],
+  "slug": "doppelganger-guise-sadist-garb"
+ },
+ "stasis": {
+  "name": "Stasis Prison",
+  "base": "Carnal Armour",
+  "chaos": 41155,
+  "div": 81.9,
+  "listings": 5,
+  "spark": [],
+  "slug": "stasis-prison-carnal-armour"
+ },
+ "stasisRaw": "Carnal Armour",
+ "aegis": {
+  "name": "Aegis Aurora",
+  "base": "Champion Kite Shield",
+  "chaos": 300,
+  "div": 0.6,
+  "listings": 567,
+  "spark": [
+   120,
+   150,
+   150,
+   150,
+   279.96,
+   300,
+   300
+  ],
+  "slug": "aegis-aurora-champion-kite-shield"
+ },
+ "kaom": {
+  "name": "Kaom's Heart",
+  "base": "Glorious Plate",
+  "chaos": 150,
+  "div": 0.3,
+  "listings": 397,
+  "spark": [
+   267.19,
+   249.98,
+   299.6,
+   197.64,
+   180.01,
+   199.99,
+   150
+  ],
+  "slug": "kaoms-heart-glorious-plate"
+ },
+ "loreweave": {
+  "name": "Loreweave",
+  "base": "Elegant Ringmail",
+  "chaos": 223.2,
+  "div": 0.44,
+  "listings": 263,
+  "spark": [
+   215.4,
+   213.21,
+   222.6,
+   222.9,
+   223.2,
+   223.2,
+   223.2
+  ],
+  "slug": "loreweave-elegant-ringmail-6l"
+ },
+ "annul": {
+  "name": "Orb of Annulment",
+  "chaos": 21.45,
+  "listings": 4830,
+  "spark": [
+   -6.95,
+   -6.36,
+   -3.38,
+   8.71,
+   36.91,
+   71.55,
+   65.95
+  ],
+  "exSpark": null
+ },
+ "divOrb": {
+  "chaos": 502.5,
+  "spark": [
+   -0.53,
+   0.59,
+   -1.64,
+   2.19,
+   14.35,
+   12.68,
+   22.74
+  ]
+ },
+ "exalt": {
+  "chaos": 5.16,
+  "spark": [
+   0,
+   18.05,
+   56.16,
+   61.01,
+   68.48,
+   63.46,
+   61.91
+  ],
+  "listings": 92
+ },
+ "horrorEss": 80.09,
+ "gems": [
+  {
+   "name": "Molten Strike of the Zenith",
+   "variant": "20/20c",
+   "chaos": 502.5,
+   "div": 1,
+   "listings": 3
+  },
+  {
+   "name": "Soulrend of Reaping",
+   "variant": "20/20c",
+   "chaos": 150,
+   "div": 0.3,
+   "listings": 72
+  },
+  {
+   "name": "Viper Strike of the Mamba",
+   "variant": "20/20c",
+   "chaos": 100,
+   "div": 0.2,
+   "listings": 34
+  }
+ ],
+ "gemSoul": {
+  "name": "Soulrend of Reaping",
+  "variant": "20/20c",
+  "chaos": 150,
+  "div": 0.3,
+  "listings": 72
+ }
+};
+
+/* ---------------- data, all derived ---------------- */
+const RATE = D.divine;                       // chaos per divine, Currency Exchange
+const f0 = n => Math.round(n).toLocaleString('en-US');
+const f2 = n => n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const chaos = n => n < 10 ? f2(n) : f0(n);
+const div2 = c => f2(c / RATE);
+const signed = n => (n >= 0 ? '+' : '−') + f0(Math.abs(n));
+const TOTAL = D.tabs.reduce((a,t)=>a+t.total,0);
+console.assert(TOTAL === D.total, 'tabs sum to total');
+D.tabs.forEach(t => console.assert(t.rows.reduce((a,r)=>a+r.total,0) === t.total));
+const UNPRICED = D.tabs.reduce((a,t)=>a+(t.unpriced||0),0);
+const NOW = '15:06';
+const PRICES_AT = '14:52';
+
+/* Sessions: first/last Snapshot are the only figures earnings use */
+const mm = s => { const [h,m]=s.split(':').map(Number); return h*60+m; };
+const hm = n => String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+function mkSession(id,date,start,end,first,last,tabsA,tabsB,running){
+  const mins = mm(end)-mm(start), n = mins/10+1;
+  const snaps=[];
+  const wob=[0,.06,.15,.19,.31,.38,.47,.55,.66,.71,.84,.93];
+  for(let i=0;i<n;i++){const f=i===0?0:i===n-1?1:Math.min(.98,(i/(n-1))+(Math.sin(i*2.1)*.035));
+    snaps.push({t:hm(mm(start)+i*10),v:i===0?first:i===n-1?last:Math.round(first+(last-first)*f),tabs:i<n/2?tabsA:tabsB});}
+  snaps[0].tabs=tabsA; snaps[n-1].tabs=tabsB;
+  const mixed = tabsA!==tabsB;
+  return {id,date,start,end,first,last,mins,snaps,gain:last-first,perHour:(last-first)/(mins/60),mixed,tabsA,tabsB,running};
+}
+const SESS = [
+  mkSession('s1','Today','13:10','15:00',12895,TOTAL,4,4,true),
+  mkSession('s2','8 Nov','19:30','22:00',10140,12420,4,4),
+  mkSession('s3','6 Nov','20:00','21:30',8410,9960,3,4),
+  mkSession('s4','4 Nov','18:00','20:00',5330,7420,3,3),
+  mkSession('s5','2 Nov','21:00','22:40',4310,5890,3,3),
+];
+const S1 = SESS[0];
+console.assert(S1.snaps.length===12 && S1.snaps[11].v===TOTAL);
+const DAYS=[['27 Oct',640],['28 Oct',1180],['29 Oct',1930],['30 Oct',2480],['31 Oct',3720],['1 Nov',4100],['2 Nov',5890],['3 Nov',5260],['4 Nov',7420],['5 Nov',8410],['6 Nov',9960],['7 Nov',10140],['8 Nov',12420]];
+const dur = m => Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' m';
+
+/* ---------------- price-check items ---------------- */
+const spark7 = a => a;                          // price series in chaos
+const pct = a => (a[a.length-1]/a[0]-1)*100;
+const CHECKS = [
+  {id:'h1',time:'14:58',kind:'commodity',name:D.doppel.name,sub:'Unique · '+D.doppel.base,chaos:D.doppel.chaos,it:D.doppel,src:'poe.ninja'},
+  {id:'h2',time:'14:55',kind:'gem',name:'Divine Font',sub:'Screen Price Check · 3 priced, 1 unrecognised',chaos:D.gems[0].chaos,gems:D.gems},
+  {id:'h3',time:'14:49',kind:'low',name:D.stasis.name,sub:'Unique · '+D.stasis.base,chaos:D.stasis.chaos,it:D.stasis,src:'poe.ninja'},
+  {id:'h4',time:'14:45',kind:'ratelimit',name:'Dread Track',sub:'Rare · Sorcerer Boots',chaos:null},
+  {id:'h5',time:'14:44',kind:'rare',name:'Dread Track',sub:'Rare · Sorcerer Boots',chaos:Math.round(2.5*RATE)},
+  {id:'h6',time:'14:38',kind:'exchange',name:D.annul.name,sub:'Currency',chaos:D.annul.chaos,it:D.annul,src:'Currency Exchange'},
+  {id:'h7',time:'14:31',kind:'none',name:'Hale Bone Helmet of the Whelpling',sub:'Magic · Bone Helmet',chaos:null},
+  {id:'h8',time:'14:20',kind:'commodity',name:D.aegis.name,sub:'Unique · '+D.aegis.base,chaos:D.aegis.chaos,it:D.aegis,src:'poe.ninja'},
+  {id:'h9',time:'14:11',kind:'stale',name:D.kaom.name,sub:'Unique · '+D.kaom.base,chaos:D.kaom.chaos,it:D.kaom,src:'poe.ninja'},
+  {id:'h10',time:'13:52',kind:'unavail',name:D.loreweave.name,sub:'Unique · '+D.loreweave.base,chaos:null,it:D.loreweave},
+];
+const STAT = {commodity:'', exchange:'', gem:'', rare:'Live Search', ratelimit:'Rate-limited', low:'Low confidence', none:'Not priced', stale:'Stale prices', unavail:'No League prices'};
+const RARE = {filters:[
+  {on:1,l:'Total elemental resistance',r:'rolled 106',v:'95'},
+  {on:1,l:'Movement speed %',r:'rolled 30',v:'27'},
+  {on:1,l:'Maximum Life',r:'rolled 89',v:'80'},
+  {on:0,l:'Cold resistance %',r:'rolled 37',v:'33'},
+  {on:1,l:'Base type',r:'',v:'Sorcerer Boots',txt:1},
+  {on:0,l:'Item level',r:'',v:'84'},
+],listings:17,lo:1.5,hi:4,med:2.5};
+
+/* ---------------- tiny SVG helpers ---------------- */
+const ico = {
+  overview:'<path d="M2.5 7.2 8 2.8l5.5 4.4v6.1H2.5z"/><path d="M6.5 13.3V9.5h3v3.8"/>',
+  checks:'<path d="M2.5 8.2 8.2 2.5h5.3v5.3L7.8 13.5z"/><circle cx="10.7" cy="5.3" r=".9"/>',
+  sessions:'<circle cx="8" cy="8" r="5.5"/><path d="M8 4.8V8l2.2 1.4"/>',
+  stash:'<path d="M2.5 5.2 8 2.7l5.5 2.5v6L8 13.7l-5.5-2.5z"/><path d="M2.7 5.3 8 8l5.3-2.7M8 8v5.5"/>',
+  settings:'<path d="M3 4.5h6M12 4.5h1M3 11.5h1M7 11.5h6"/><circle cx="10.5" cy="4.5" r="1.5"/><circle cx="5.5" cy="11.5" r="1.5"/>',
+};
+const icon = k => `<svg viewBox="0 0 16 16" aria-hidden="true">${ico[k]}</svg>`;
+const chev = '<svg viewBox="0 0 12 12"><path d="M3 4.5 6 7.5l3-3"/></svg>';
+const MARK = `<svg class="mark" viewBox="0 0 26 26" role="img" aria-label="Lootwise"><rect x="1" y="1" width="24" height="24" rx="7" fill="#1b6c80"/><path d="M13 6.2 19.4 13 13 19.8 6.6 13z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="13" cy="13" r="2" fill="#fff"/></svg>`;
+
+function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v)));for(const m of [1,1.5,2,2.5,3,4,5,6,8,10]) if(m*p>=v) return m*p;return v}
+/* line chart on a real time axis (minutes). pts: [{x, y}] */
+function lineChart({w,h,pts,xticks,yfmt=f0,ymax,annot,min=0,color='var(--accent)',flat=false}){
+  const L=54,R=10,T=annot?22:8,B=22,pw=w-L-R,ph=h-T-B;
+  const x0=pts[0].x,x1=pts[pts.length-1].x;
+  const ym=ymax||niceMax(Math.max(...pts.map(p=>p.y))*1.02);
+  const X=x=>L+(x-x0)/(x1-x0)*pw, Y=y=>T+ph-(y-min)/(ym-min)*ph;
+  let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="Net worth over time">`;
+  const n=4;
+  for(let i=0;i<=n;i++){const v=min+(ym-min)*i/n,y=Y(v);
+    s+=`<line x1="${L}" x2="${w-R}" y1="${y}" y2="${y}" stroke="${i===0?'#9da099':'#e5e7e2'}" stroke-width="1"/>`;
+    s+=`<text x="${L-8}" y="${y+4}" text-anchor="end" font-size="12" fill="#5b5e5c">${yfmt(v)}</text>`;}
+  xticks.forEach((t,i)=>{const x=X(t.x);const a=i===0?'start':i===xticks.length-1?'end':'middle';
+    s+=`<text x="${x}" y="${h-4}" text-anchor="${a}" font-size="12" fill="#5b5e5c">${t.l}</text>`;});
+  s+=`<polyline fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" points="${pts.map(p=>X(p.x).toFixed(1)+','+Y(p.y).toFixed(1)).join(' ')}"/>`;
+  const e=pts[pts.length-1];
+  s+=`<circle cx="${X(e.x)}" cy="${Y(e.y)}" r="4" fill="${color}" stroke="#fff" stroke-width="2"/>`;
+  if(annot){const ax=X(annot.x);s+=`<line x1="${ax}" x2="${ax}" y1="${T-6}" y2="${T+ph}" stroke="#131416" stroke-width="1" stroke-dasharray="3 3"/><text x="${ax-6}" y="${T-9}" text-anchor="end" font-size="12" fill="#131416">${annot.l}</text>`;}
+  return s+'</svg>';
+}
+function trend(series,w=288,h=44){
+  const mn=Math.min(...series),mx=Math.max(...series),p=4;
+  const X=i=>p+i/(series.length-1)*(w-2*p),Y=v=>p+(h-2*p)-(v-mn)/((mx-mn)||1)*(h-2*p);
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="7-day price trend"><line x1="0" x2="${w}" y1="${h-.5}" y2="${h-.5}" stroke="#e5e7e2"/><polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" points="${series.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}"/><circle cx="${X(series.length-1)}" cy="${Y(series[series.length-1])}" r="3.5" fill="var(--accent)" stroke="#fff" stroke-width="1.5"/></svg>`;
+}
+
+/* ---------------- overlay card renderer ---------------- */
+const esc = '<span class="kc">Esc</span>';
+function priceBlock(c,note){return `<div class="pr"><div class="big">${chaos(c)}<u>chaos</u></div><div class="dv">${div2(c)}<u>divine</u></div></div>`}
+function head(name,sub){return `<div><div class="nm">${name}</div><div class="sub">${sub}</div></div>`}
+function cardCommodity(c,age='14 min'){
+  const it=c.it, price=it.chaos, series=it.spark.length>1?it.spark:null;
+  const exch=c.kind==='exchange';
+  const ch=series?pct(series):null;
+  return `<div class="ocard" aria-label="Price Check result">${head(c.name,c.sub+' · Allflame')}
+  ${priceBlock(price)}
+  <div class="meta">
+    <div class="kv"><span>${exch?'Source':'Listings'}</span><span class="num">${exch?'Currency Exchange':f0(it.listings)}</span></div>
+    <div class="kv"><span>Confidence</span><span><span class="pill pos">High</span></span></div>
+    <div class="kv"><span>Price age</span><span class="num">${exch?'Up to 2 h old':age+' ago'}</span></div>
+  </div>
+  <div class="trend"><div class="tt"><span>7 days</span><span class="num">${ch>=0?'+':'−'}${Math.abs(ch).toFixed(1)}% vs ${chaos(series[0])} chaos</span></div>${trend(series)}</div>
+  <div class="foot"><a class="link">Open on poe.ninja ↗</a>${esc}</div></div>`;
+}
+function cardLow(c,stale){
+  const it=c.it;
+  return `<div class="ocard">${head(c.name,c.sub+' · Allflame')}
+  ${priceBlock(it.chaos)}
+  <div class="msg warnmsg"><b>${stale?'Prices are 3 h 26 m old':'Low confidence'}</b>${stale?'The price relay is unreachable. This is the last cached price, shown with lower confidence.':'Based on '+it.listings+' listings. Fewer than 10 is too thin to trust.'}</div>
+  <div class="meta">
+    <div class="kv"><span>Listings</span><span class="num">${f0(it.listings)}</span></div>
+    <div class="kv"><span>Confidence</span><span><span class="pill warn">Low</span></span></div>
+    <div class="kv"><span>Price age</span><span class="num">${stale?'3 h 26 m ago':'14 min ago'}</span></div>
+  </div>
+  <div class="trend"><div class="tt"><span>7 days</span><span class="num">${it.spark.length>1?(pct(it.spark)>=0?'+':'−')+Math.abs(pct(it.spark)).toFixed(1)+'% vs '+chaos(it.spark[0])+' chaos':'—'}</span></div>${it.spark.length>1?trend(it.spark):'<div class="empty" style="min-height:44px">Not enough history for a trend.</div>'}</div>
+  <div class="foot"><a class="link">Open on poe.ninja ↗</a>${esc}</div></div>`;
+}
+function cardRare(limited,view){
+  const f=RARE.filters;
+  return `<div class="ocard">${head('Dread Track','Rare · Sorcerer Boots · item level 84')}
+  ${limited?`<div class="msg warnmsg"><b>Search again in 8 s</b>Trade searches are rate-limited. Lootwise waits for you.<div class="prog" style="margin-top:8px;background:#fde68a"><i style="width:38%;background:#92400e"></i></div></div>`
+  : `<div><div class="pr"><div class="big">${f2(RARE.med)}<u>divine</u></div><div class="dv">${f0(RARE.med*RATE)}<u>chaos</u></div></div><div class="sub" style="margin-top:2px">Median of ${RARE.listings} listings · range ${f2(RARE.lo)}–${f2(RARE.hi)} divine</div></div>`}
+  <div style="margin-top:-4px"><div class="sub" style="margin-bottom:2px">Live Search filters · minimums at 90% of the roll</div>
+  ${f.map(x=>`<div class="filt ${x.on?'':'off'}"><span class="cb ${x.on?'on':''}" role="checkbox" aria-checked="${!!x.on}"></span><span>${x.l}${x.r?`<span class="roll">${x.r}</span>`:''}</span><span class="nf num" style="${x.txt?'min-width:0':''}">${x.v}</span></div>`).join('')}</div>
+  <div class="btns"><button class="btn" ${limited?'disabled':''}>Search again</button><button class="btn primary">Open on trade site ↗</button></div>
+  <div class="foot" style="margin-top:0"><span class="hint">${limited?'Last result 14:44':'Searched 14:44'}</span>${esc}</div></div>`;
+}
+function cardNone(){return `<div class="ocard">${head('Hale Bone Helmet of the Whelpling','Magic · Bone Helmet')}
+  <div class="msg"><b>Not a Commodity Item</b>Lootwise prices currency, fragments, uniques and gems from market data, and rares with a Live Search. A magic item has neither, so this is not a price of zero.</div>
+  <div class="foot">${esc}</div></div>`}
+function cardUnavail(it){return `<div class="ocard">${head(it.name,'Unique · '+it.base+' · Allflame Hardcore')}
+  <div class="msg"><b>Prices unavailable for this League</b>The price relay does not cover Allflame Hardcore, so Lootwise will not show another League’s price.</div>
+  <div class="btns"><button class="btn">Change League</button></div>
+  <div class="foot">${esc}</div></div>`}
+function cardGem(gems,full){
+  const g=[...gems].sort((a,b)=>b.chaos-a.chaos);
+  return `<div class="ocard" style="gap:8px"><div><div class="nm">Divine Font</div><div class="sub">Screen Price Check · priced as 20/20 corrupted</div></div>
+  <div class="msg" style="padding:8px 12px;font-size:13px">Offered gem: <b style="display:inline;font-weight:600">20/20 corrupted</b> <span class="muted">· from your last Price Check on it</span></div>
+  <div>${g.map((x,i)=>`<div class="gemrow ${i===0?'best':''}"><div><div class="n">${x.name}</div><div class="s">${x.variant} · ${x.listings} listing${x.listings===1?'':'s'}${x.listings<10?' · low confidence':''}</div></div><div class="v num">${chaos(x.chaos)} chaos<small>${div2(x.chaos)} divine</small></div></div>`).join('')}
+  <div class="gemrow unk"><div><div class="n">Unrecognised</div><div class="s">Name could not be matched, so not priced</div></div><div class="v">—</div></div></div>
+  <div class="foot"><span class="hint">Sorted by value · one frame read</span>${esc}</div></div>`;
+}
+function cardFor(c){
+  switch(c.kind){
+    case 'commodity': case 'exchange': return cardCommodity(c);
+    case 'low': return cardLow(c,false);
+    case 'stale': return cardLow(c,true);
+    case 'rare': return cardRare(false);
+    case 'ratelimit': return cardRare(true);
+    case 'none': return cardNone();
+    case 'unavail': return cardUnavail(c.it);
+    case 'gem': return cardGem(c.gems);
+  }
+}
+
+/* ---------------- shell ---------------- */
+const NAV=[['overview','Overview','1'],['checks','Price checks','2'],['sessions','Sessions','3'],['stash','Stash','4'],['settings','Settings','5']];
+function shell(active,content,o={}){
+  const live = o.firstRun
+    ? `<button class="live" data-go="setup"><div class="t"><span class="dot off"></span>No Session</div><div class="s">Finish setup to start one</div></button>`
+    : o.signedOut
+    ? `<button class="live" data-go="sessions"><div class="t"><span class="dot warn"></span>Session paused</div><div class="s">Sign-in expired 14:20</div></button>`
+    : `<button class="live" data-go="sessions"><div class="t"><span class="dot"></span>Session ${dur(mm(NOW)-mm(S1.start))}</div><div class="s num">Next Snapshot 15:10</div></button>`;
+  const acct = o.firstRun||o.signedOut ? `<span class="dot off"></span>${o.firstRun?'Not signed in':'Signed out'}` : `<span class="dot"></span>Signed in · 6 h 34 m left`;
+  const stamp = o.stale ? `<span class="pill warn">Prices 11:40 · 3 h 26 m old</span>` : `<span class="stamp"><span class="dot"></span>Prices ${PRICES_AT} · 14 min ago</span>`;
+  return `<div class="app">
+  <aside class="side"><div class="brand">${MARK}<b>Lootwise</b></div><div class="scopeline">Path of Exile 1</div>
+   <nav class="nav" aria-label="Destinations">${NAV.map(([k,l,key])=>`<button data-go="${k}" ${k===active?'aria-current="page"':''}>${icon(k)}<span>${l}</span><span class="kc">${key}</span></button>`).join('')}</nav>
+   <div class="sidefoot">${live}<div class="acct">${acct}</div></div></aside>
+  <header class="top"><button class="sel" aria-label="League">Allflame ${chev}</button><span class="sp"></span>${stamp}</header>
+  ${content}</div>`;
+}
+const sheet = (inner,cls='') => `<main class="sheet ${cls}">${inner}</main>`;
+
+/* ---------------- screens ---------------- */
+function netChart(w,h){
+  const base=Date.UTC(2026,9,27);
+  const pts=DAYS.map(([d,v],i)=>({x:i*1440,y:v}));
+  const day9=13*1440;
+  S1.snaps.forEach(s=>pts.push({x:day9+mm(s.t),y:s.v}));
+  const xt=[0,2,4,6,8,10,12].map(i=>({x:i*1440,l:DAYS[i][0]}));
+  xt.push({x:day9+mm('13:10')+55,l:'9 Nov'});
+  xt.pop();
+  return lineChart({w,h,pts,xticks:[...xt.filter(t=>t.x<10*1440+1),{x:12*1440,l:'8 Nov'},{x:day9+15*60,l:'9 Nov'}].filter((t,i,a)=>a.findIndex(q=>q.l===t.l)===i),ymax:20000,yfmt:v=>f0(v),annot:{x:day9+mm('13:10'),l:'Session started 13:10'}});
+}
+function recentChecks(n,full){
+  return CHECKS.slice(0,n).map(c=>`<button class="row" data-open="${c.id}" style="grid-template-columns:44px 1fr auto;width:100%;text-align:left;${full?'':''}"><span class="muted num">${c.time}</span><span style="min-width:0"><div class="n">${c.name}</div><div class="s">${c.sub}</div></span><span class="r num" style="font-weight:500">${c.chaos!=null?chaos(c.chaos)+'<span class="u">chaos</span>':`<span class="muted" style="font-weight:400">${STAT[c.kind]||'—'}</span>`}</span></button>`).join('');
+}
+function tabBars(){
+  const mx=Math.max(...D.tabs.map(t=>t.total));
+  return D.tabs.filter(t=>!t.removeOnly).map((t,i)=>`<div class="row" style="grid-template-columns:1fr auto;min-height:46px;padding:4px 0"><div><div class="n">${t.name}</div><div class="bar"><i class="${t.total===mx?'top':''}" style="width:${t.total/mx*100}%"></i></div></div><div class="r num" style="font-weight:500">${f0(t.total)}</div></div>`).join('');
+}
+function scrOverview(o={}){
+  if(o.firstRun) return scrOverviewEmpty();
+  const loading=o.loading;
+  const sk=(w,h)=>`<span class="sk" style="width:${w}px;height:${h}px"></span>`;
+  const top = o.stale ? `<div class="notice"><span>Price relay unreachable. Valuations use cached prices from 11:40 and carry lower confidence.</span><button class="link">Retry now</button></div>`
+    : o.signedOut ? `<div class="notice"><span>Your GGG sign-in expired at 14:20 (it lasts 10 hours). Snapshots are paused until you sign in again. Price Check still works.</span><button class="link" data-go="setup">Sign in</button></div>`:'';
+  const tl=`<div class="titlerow"><div><h2>Overview</h2><p>${loading?'Loading your last Snapshot…':o.signedOut?`Net worth was ${f0(TOTAL)} chaos at the last Snapshot, 15:00.`:`Up ${f0(S1.gain)} chaos since this Session began at ${S1.start}, ${f0(S1.perHour)} chaos per hour.`}</p></div><div class="act"><button class="btn" ${loading||o.signedOut?'disabled':''}>Take Snapshot</button></div></div>`;
+  const netHead = loading
+    ? `<div>${sk(190,38)}</div><div style="margin-top:6px">${sk(120,16)}</div>`
+    : `<div class="fig num">${f0(TOTAL)}<u>chaos</u></div><div class="delta num">${div2(TOTAL)} divine · ${signed(S1.gain)} since ${S1.start} Session start</div>`;
+  const chart = loading ? `<div class="sk" style="width:100%;height:150px;margin-top:16px"></div>` : `<div style="margin-top:12px">${netChart(596,o.stale||o.signedOut?112:150)}</div>`;
+  const sessionCard = loading
+   ? `<div class="card"><header><h3>Session</h3></header>${sk(160,30)}<div style="height:12px"></div>${sk(260,16)}<div style="height:8px"></div>${sk(240,16)}<div style="height:8px"></div>${sk(200,16)}</div>`
+   : o.signedOut
+   ? `<div class="card"><header><h3>Session</h3><div class="r"><span class="pill warn">Paused</span></div></header><div class="fig2 num">${f0(S1.perHour)}<u>chaos per hour</u></div><div class="delta">First to last Snapshot, ${S1.start} → 15:00</div><div class="well" style="margin-top:16px"><div class="kv"><span>Snapshots</span><span class="num">${S1.snaps.length}</span></div><div class="kv"><span>Last Snapshot</span><span class="num">15:00</span></div><div class="kv"><span>Next Snapshot</span><span>Needs sign-in</span></div></div><div style="margin-top:16px"><button class="btn primary" data-go="setup">Sign in with GGG</button></div></div>`
+   : `<div class="card"><header><h3>Session</h3><div class="r"><span class="pill pos">Running ${dur(mm(NOW)-mm(S1.start))}</span></div></header><div class="fig2 num">${f0(S1.perHour)}<u>chaos per hour</u></div><div class="delta">First to last Snapshot, ${S1.start} → 15:00 (${dur(S1.mins)})</div><div class="well" style="margin-top:16px"><div class="kv"><span>Gain</span><span class="num">${signed(S1.gain)} chaos</span></div><div class="kv"><span>Snapshots</span><span class="num">${S1.snaps.length}</span></div><div class="kv"><span>Next Snapshot</span><span class="num">15:10</span></div></div><div style="margin-top:16px;display:flex;gap:8px"><button class="btn primary">Take Snapshot</button><button class="btn">Stop Session</button></div></div>`;
+  const recent = loading
+   ? [1,2,3,4].map(()=>`<div class="row" style="grid-template-columns:44px 1fr auto">${sk(36,14)}<div>${sk(180,14)}<div style="height:6px"></div>${sk(120,12)}</div>${sk(60,16)}</div>`).join('')
+   : recentChecks(4);
+  const bars = loading ? D.tabs.filter(t=>!t.removeOnly).map(()=>`<div class="row" style="min-height:46px">${sk(300,14)}</div>`).join('') : tabBars();
+  return sheet(`${top}${tl}
+  <div class="grid2"><div class="card"><header><h3>Net worth</h3><div class="r"><span>27 Oct – 9 Nov · Allflame</span></div></header>${netHead}${chart}</div>${sessionCard}</div>
+  <div class="grid2"><div class="card"><header><h3>Recent price checks</h3><div class="r"><button class="link" data-go="checks">View all 10 <span class="kc">2</span></button></div></header><div class="rows">${recent}</div></div>
+  <div class="card"><header><h3>Where it sits</h3><div class="r"><button class="link" data-go="stash">Stash <span class="kc">4</span></button></div></header><div class="rows">${bars}</div><div class="hint" style="margin-top:8px">${loading?'':`${UNPRICED} rare items unpriced, counted as 0`}</div></div></div>`);
+}
+function scrOverviewEmpty(){
+  return sheet(`<div class="titlerow"><div><h2>Overview</h2><p>Nothing to show yet. Price Check already works in the game; wealth tracking needs a sign-in.</p></div><div class="act"><button class="btn primary" data-go="setup">Set up wealth tracking</button></div></div>
+  <div class="grid2"><div class="card"><header><h3>Net worth</h3><div class="r"><span>Allflame</span></div></header><div class="fig num" style="color:var(--muted)">0<u>chaos</u></div><div class="delta">No Snapshots yet</div>
+   <div style="margin-top:12px">${emptyChart(596,150)}</div></div>
+   <div class="card"><header><h3>Set up</h3><div class="r"><span class="num">0 of 3</span></div></header><div class="prog"><i style="width:0%"></i></div>
+    <div class="rows" style="margin-top:8px">${['Sign in with GGG','Pick your League','Choose stash tabs'].map((t,i)=>`<div class="row" style="grid-template-columns:20px 1fr;min-height:44px"><span class="muted num">${i+1}.</span><span class="n">${t}</span></div>`).join('')}</div>
+    <div style="margin-top:12px"><button class="btn" data-go="setup">Start</button></div></div></div>
+  <div class="grid2"><div class="card"><header><h3>Recent price checks</h3></header><div class="empty" style="min-height:96px">Press <span class="kc" style="margin:0 6px">Ctrl</span>+<span class="kc" style="margin:0 6px">D</span> over an item in the game. Results show up here.</div></div>
+  <div class="card"><header><h3>Where it sits</h3></header><div class="empty" style="min-height:96px">Appears after your first Snapshot.</div></div></div>`);
+}
+function emptyChart(w,h){
+  const L=44,R=10,T=8,B=22;let s=`<svg width="${w}" height="${h}" role="img" aria-label="Empty chart"><g font-size="12" fill="#5b5e5c">`;
+  for(let i=0;i<=4;i++){const y=T+(h-T-B)*(1-i/4);s+=`<line x1="${L}" x2="${w-R}" y1="${y}" y2="${y}" stroke="${i?'#e5e7e2':'#9da099'}"/><text x="${L-8}" y="${y+4}" text-anchor="end">${i?i*5+"k":"0"}</text>`}
+  return s+'</g></svg>';
+}
+
+function stashBy(tabIdx){
+  if(tabIdx===-1){
+    const all=D.tabs.flatMap(t=>t.rows.map(r=>({...r,tab:t.name}))).sort((a,b)=>b.total-a.total);
+    return all;
+  }
+  return D.tabs[tabIdx].rows;
+}
+let ST={tab:-1,check:null,sess:'s1',set:'account'};
+const RARES=[['Dread Track','Sorcerer Boots'],['Gloom Coil','Opal Ring'],['Doom Whorl','Vaal Regalia'],['Plague Cloak','Titanium Spirit Shield'],['Rune Grip','Spiked Gloves'],['Havoc Spire','Imperial Staff'],['Storm Brace','Jade Amulet'],['Cinder Veil','Hubris Circlet'],['Bone Charm','Stygian Vise']];
+function scrStash(){
+  const tabs=D.tabs;
+  const sel=ST.tab, rows=stashBy(sel).slice(0,sel===-1?7:99);
+  const allRows=stashBy(sel);
+  const listTot=sel===-1?TOTAL:tabs[sel].total;
+  const unp=sel===-1?UNPRICED:tabs[sel].unpriced;
+  const mx=Math.max(...tabs.map(t=>t.total));
+  const tabList=`<button class="tabrow" data-tab="-1" aria-selected="${sel===-1}"><span></span><span class="n" style="font-weight:600">All selected tabs</span><span class="num" style="font-weight:600">${f0(TOTAL)}</span></button>`+
+    tabs.map((t,i)=>`<button class="tabrow" data-tab="${i}" aria-selected="${sel===i}"><span class="cbx"><span class="cb ${t.removeOnly?'':'on'}"></span></span><span><div class="n">${t.name}</div>${t.removeOnly?'<div class="s muted" style="font-size:12px">Remove-only · not counted</div>':`<div class="bar" style="width:100%"><i style="width:${t.total/mx*100}%"></i></div>`}</span><span class="num ${t.removeOnly?'muted':''}">${t.removeOnly?'—':f0(t.total)}</span></button>`).join('');
+  const title=sel===-1?'By item, all selected tabs':tabs[sel].name;
+  const body = tabs[sel]?.removeOnly ? `<div class="empty" style="min-height:96px">Remove-only tabs are left out of Snapshots by default. Tick the box to count it.</div>` :
+  `<table><thead><tr><th>Item</th>${sel===-1?'<th>Tab</th>':''}<th class="r" style="width:64px">Qty</th><th class="r" style="width:110px">Unit price</th><th class="r" style="width:96px">Total<span class="sort">▼</span></th></tr></thead><tbody>${rows.map(r=>`<tr><td style="font-weight:500">${r.name}</td>${sel===-1?`<td class="muted">${r.tab}</td>`:''}<td class="r num">${f0(r.qty)}</td><td class="r num muted">${f2(r.unit)}</td><td class="r num" style="font-weight:500">${f0(r.total)}</td></tr>`).join('')}</tbody></table>
+  ${sel===-1&&allRows.length>7?`<div class="hint" style="margin-top:8px">Top 7 of ${allRows.length} priced items. Sort or scroll for the rest.</div>`:''}`;
+  const unpBlock = unp? `<div style="margin-top:20px"><div style="display:flex;align-items:baseline;gap:10px"><h3>Unpriced</h3><span class="muted num">${unp} items · counted as 0</span></div><div class="muted" style="font-size:13px;margin:2px 0 6px">Rares are never priced in Snapshots, and a Snapshot never runs a Live Search.</div>
+   <table><tbody>${RARES.slice(0,sel===-1?3:9).map(r=>`<tr class="gr"><td style="font-weight:500;color:var(--text)">${r[0]}</td><td>${r[1]}</td><td class="r">—</td></tr>`).join('')}</tbody></table>${sel===-1&&unp>3?`<div class="hint" style="margin-top:6px">and ${unp-3} more in Gear</div>`:''}</div>`:'';
+  return sheet(`<div class="titlerow"><div><h2>Stash</h2><p>Snapshot of 15:00, 9 Nov · ${f0(TOTAL)} chaos across ${tabs.filter(t=>!t.removeOnly).length} of ${tabs.length} tabs.</p></div><div class="act"><button class="btn">Latest Snapshot ${chev}</button><button class="btn primary">Take Snapshot</button></div></div>
+  <div style="display:grid;grid-template-columns:340px 1fr;gap:var(--gap);align-items:start"><div class="card" style="padding:12px"><div class="muted" style="font-size:12px;padding:4px 10px 6px">Tabs counted in your wealth</div>${tabList}<div class="hint" style="padding:10px 10px 4px">Everything except remove-only tabs is counted by default.</div></div>
+  <div class="card"><header><h3>${title}</h3><div class="r"><span class="num"><b style="font-weight:600;color:var(--text);font-size:14px">${f0(listTot)}</b> chaos · ${div2(listTot)} divine</span></div></header>${body}${unpBlock}</div></div>`);
+}
+
+function scrChecks(){
+  const c=CHECKS.find(x=>x.id===ST.check)||CHECKS[0];
+  const list=CHECKS.map(x=>`<button class="mrow" role="option" data-open="${x.id}" aria-selected="${x.id===c.id}"><span style="min-width:0"><div class="n">${x.name}</div><div class="s">${x.time} · ${x.sub}</div></span><span class="v num">${x.chaos!=null?chaos(x.chaos)+'<small>'+(x.kind==='rare'?'divine median 2.50':div2(x.chaos)+' divine')+'</small>':`<span class="muted" style="font-weight:400;font-size:13px">${STAT[x.kind]||'—'}</span>`}</span></button>`).join('');
+  return `<main class="sheet flush"><section class="master"><div class="hd"><h2>Price checks</h2><p>Today’s overlay results. Pick one to re-open it.</p><div class="seg" role="group" aria-label="Filter"><button aria-pressed="true">All 10</button><button aria-pressed="false">Items 9</button><button aria-pressed="false">Gems 1</button></div></div><div class="mlist" role="listbox" aria-label="Price checks">${list}</div></section>
+  <section class="detail"><div class="titlerow" style="margin-bottom:16px"><div><h2 style="font-size:18px;line-height:24px">${c.name}</h2><p>Checked at ${c.time} · Allflame</p></div><div class="act"><button class="btn" data-over="${c.id}">Show over game</button></div></div>
+  <div class="hist-pane"><div class="cardwell">${cardFor(c)}</div><div style="flex:1;min-width:0"><div class="muted" style="font-size:12px;margin-bottom:6px">This is the card exactly as it appeared in the game.</div>${checkMeta(c)}</div></div></section></main>`;
+}
+function checkMeta(c){
+  const kv=(a,b)=>`<div class="kv"><span>${a}</span><span class="num">${b}</span></div>`;
+  let rows='';
+  if(c.kind==='gem') rows=kv('Hotkey','Ctrl+Alt+D')+kv('Screen Profile','Divine Font')+kv('Options read','4 (3 priced)')+kv('Best option',D.gems[0].name.split(' of ')[0]+' · '+chaos(D.gems[0].chaos));
+  else if(c.kind==='rare'||c.kind==='ratelimit') rows=kv('Hotkey','Ctrl+D')+kv('Method','Live Search')+kv('Filters on','4 of 6')+kv('Listings',String(RARE.listings));
+  else if(c.kind==='none'||c.kind==='unavail') rows=kv('Hotkey','Ctrl+D')+kv('Method','—')+kv('Valuation','None');
+  else rows=kv('Hotkey','Ctrl+D')+kv('Source',c.src)+kv('Divine rate',f2(RATE)+' chaos')+kv('Method','Commodity Item');
+  return `<div class="well">${rows}</div><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-over="${c.id}">Show over game <span class="kc">Enter</span></button></div>`;
+}
+
+function sessList(){
+  return SESS.map(s=>`<button class="mrow" role="option" data-sess="${s.id}" aria-selected="${s.id===ST.sess}"><span><div class="n">${s.date}${s.running?' · running':''}</div><div class="s num">${s.start}–${s.running?'now':s.end} · ${s.snaps.length} Snapshots</div></span><span class="v num">${s.mixed?'<span class="pill warn">Tabs differ</span>':f0(s.perHour)+'<small>chaos per hour</small>'}</span></button>`).join('');
+}
+function scrSessions(){
+  const s=SESS.find(x=>x.id===ST.sess);
+  const pts=s.snaps.map((p,i)=>({x:mm(p.t),y:p.v}));
+  const lo=Math.min(...pts.map(p=>p.y)), hi=Math.max(...pts.map(p=>p.y));
+  const step=Math.max(1,Math.ceil((s.snaps.length)/6));
+  const xt=s.snaps.filter((p,i)=>i%step===0).map(p=>({x:mm(p.t),l:p.t}));
+  const ym=niceMax(hi*1.03), 
+  chart=lineChart({w:540,h:150,pts,xticks:xt.slice(0,6),ymax:ym,min:Math.floor(lo*.95/1000)*1000,yfmt:f0});
+  const headFig = s.mixed
+    ? `<div class="fig2" style="color:var(--muted)">—<u>chaos per hour</u></div><div class="notice in" style="margin-top:10px;margin-bottom:0"><span>No earnings figure: this Session’s Snapshots cover different stash tabs (${s.tabsA} tabs at ${s.start}, ${s.tabsB} at ${s.end}). Adding a tab would count as income.</span></div>`
+    : `<div class="fig num">${f0(s.perHour)}<u>chaos per hour</u></div><div class="delta num">${signed(s.gain)} chaos (${f2(s.gain/RATE)} divine) from ${s.start} to ${s.snaps[s.snaps.length-1].t}, ${dur(s.mins)}</div>`;
+  const rows=[...s.snaps].reverse().map((p,i,a)=>`<tr><td class="num">${p.t}</td><td class="r num" style="font-weight:500">${f0(p.v)}</td><td class="r num muted">${i<a.length-1?signed(p.v-a[i+1].v):'—'}</td><td class="r num muted">${p.tabs}</td></tr>`).join('');
+  return `<main class="sheet flush"><section class="master"><div class="hd"><h2>Sessions</h2><p>Earnings are measured between the first and last Snapshot.</p><button class="btn ${S1.running?'':'primary'}" style="width:100%;justify-content:center">${S1.running?'Stop current Session':'Start Session'}</button></div><div class="mlist" role="listbox" aria-label="Sessions">${sessList()}</div></section>
+  <section class="detail"><div class="titlerow" style="margin-bottom:16px"><div><h2 style="font-size:18px;line-height:24px">${s.date==='Today'?'Today, ':''}${s.date==='Today'?'9 Nov':s.date}, ${s.start}–${s.running?'now':s.end}</h2><p>${s.running?'Running · next Snapshot at 15:10':'Ended '+s.end+' · '+dur(s.mins)}</p></div></div>
+  <div class="card" style="margin-bottom:var(--gap)"><header><h3>Earnings per hour</h3><div class="r"><span>First to last Snapshot</span></div></header>${headFig}<div style="margin-top:8px">${chart}</div></div>
+  <div class="card" style="padding:16px 16px 4px;max-height:300px;overflow:auto"><header style="margin-bottom:0"><h3>Snapshots</h3><div class="r"><span class="num">${s.snaps.length}${s.running?' · every 10 min':''}</span></div></header><table><thead><tr><th>Time</th><th class="r">Net worth, chaos</th><th class="r">Change</th><th class="r">Tabs</th></tr></thead><tbody>${rows}</tbody></table></div></section></main>`;
+}
+
+function keys(...k){return k.map(x=>`<span class="kc">${x}</span>`).join('<span class="muted" style="margin:0 2px">+</span>')}
+const SETS=[['account','Account and League'],['hotkeys','Hotkeys'],['snap','Snapshots'],['prices','Prices'],['plugins','Plugins'],['about','About']];
+function scrSettings(){
+  const p=ST.set;
+  const side=SETS.map(([k,l])=>`<button class="mrow" role="option" data-set="${k}" aria-selected="${k===p}" style="grid-template-columns:1fr;height:40px"><span class="n" style="font-weight:${k===p?500:400}">${l}</span></button>`).join('');
+  const P={
+   account:`<div class="sec"><div class="l"><h3>GGG sign-in</h3><p>Only wealth tracking needs it. Price Check works without.</p></div><div class="panel"><div class="prow"><span class="dot"></span><div><div class="t">Signed in</div><div class="d">Since 11:40. GGG sign-ins expire after 10 hours, so this one ends at 21:40.</div></div><div class="end"><button class="btn sm">Sign out</button></div></div><div class="prow"><div class="d" style="flex:1">The access token is stored in your system keychain. Plugins never see it.</div></div></div></div>
+     <div class="sec"><div class="l"><h3>League</h3><p>Prices, Snapshots and Sessions never mix across Leagues.</p></div><div class="panel"><div class="prow"><div class="t">Active League</div><div class="end"><button class="sel">Allflame ${chev}</button></div></div><div class="prow"><div class="d">Defaults to the current challenge League.</div></div></div></div>
+     <div class="sec"><div class="l"><h3>Stash tabs</h3><p>Chosen per League.</p></div><div class="panel"><div class="prow"><div><div class="t">4 of 5 tabs counted</div><div class="d">Remove-only tabs are off by default.</div></div><div class="end"><button class="btn sm" data-go="stash">Choose tabs</button></div></div></div></div>`,
+   hotkeys:`<div class="sec"><div class="l"><h3>Shortcuts</h3><p>Click a field and press the new combination.</p></div><div class="panel"><div class="prow"><div><div class="t">Price Check</div><div class="d">Priced next to your cursor</div></div><div class="end"><span class="fld" role="button" tabindex="0" aria-label="Price Check shortcut">${keys('Ctrl','D')}</span><button class="btn sm">Record</button></div></div><div class="prow"><div><div class="t">Screen Price Check</div><div class="d">Reads the Divine Font once, only when pressed</div></div><div class="end"><span class="fld" role="button" tabindex="0" aria-label="Screen Price Check shortcut">${keys('Ctrl','Alt','D')}</span><button class="btn sm">Record</button></div></div></div></div>
+     <div class="sec"><div class="l"><h3>Overlay</h3><p>How the card behaves over the game.</p></div><div class="panel"><div class="prow"><div class="t">Close with Esc or by moving the mouse away</div><div class="end"><span class="sw on"></span></div></div><div class="prow"><div class="d">On native Wayland the card is read-only. Exclusive fullscreen hides it; use windowed or borderless.</div></div></div></div>`,
+   snap:`<div class="sec"><div class="l"><h3>Automatic Snapshots</h3><p>Taken during a running Session.</p></div><div class="panel"><div class="prow"><div class="t">Every</div><div class="end"><div class="seg" role="group"><button aria-pressed="false">5 min</button><button aria-pressed="true">10 min</button><button aria-pressed="false">15 min</button><button aria-pressed="false">30 min</button></div></div></div><div class="prow"><div class="d">A 2-hour Session at 10 minutes holds 13 Snapshots. Snapshots never trigger a Live Search.</div></div></div></div>`,
+   prices:`<div class="sec"><div class="l"><h3>Price relay</h3><p>Public price data, republished. No player data leaves this machine.</p></div><div class="panel"><div class="prow"><span class="dot"></span><div><div class="t">Up to date</div><div class="d">Last update ${PRICES_AT}, 14 min ago. Checked every 15 minutes.</div></div><div class="end"><button class="btn sm">Check now</button></div></div><div class="prow"><div class="d">If the relay is unreachable or over an hour stale, Lootwise keeps the cached prices and lowers confidence.</div></div></div></div>
+     <div class="sec"><div class="l"><h3>Divine rate</h3><p>Used to show chaos and divine side by side.</p></div><div class="panel"><div class="prow"><div class="t">1 divine</div><div class="end num" style="font-weight:500">${f2(RATE)} chaos</div></div><div class="prow"><div class="d">From the Currency Exchange, up to 2 hours old.</div></div></div></div>`,
+   plugins:`<div class="sec"><div class="l"><h3>Plugins</h3><p>Data-only add-ons for price sources, valuation rules and item details.</p></div><div class="panel"><div class="empty" style="min-height:96px;background:#fff">No Plugins installed. Plugin support arrives in a later release.</div></div></div>`,
+   about:`<div class="sec"><div class="l"><h3>Lootwise</h3><p>Local-only. Nothing updates without you.</p></div><div class="panel"><div class="prow"><div><div class="t">Version 0.1.0</div><div class="d">Linux · AppImage</div></div></div><div class="notice in" style="margin:0;background:#fffbeb"><span>Version 0.1.1 is available.</span><button class="link">See what’s new</button></div></div></div>`
+  };
+  const name=SETS.find(x=>x[0]===p)[1];
+  return `<main class="sheet flush" style="grid-template-columns:260px 1fr"><section class="master"><div class="hd"><h2>Settings</h2><p>Saved as you change them.</p></div><div class="mlist" role="listbox" aria-label="Settings sections">${side}</div></section><section class="detail"><div class="titlerow" style="margin-bottom:20px"><div><h2 style="font-size:18px;line-height:24px">${name}</h2></div></div>${P[p]}</section></main>`;
+}
+
+function scrSetup(){
+  return sheet(`<div class="titlerow"><div><h2>Set up wealth tracking</h2><p>Price Check already works. These three steps unlock net worth, Sessions and Snapshots.</p></div></div>
+  <div class="steps">
+   <div class="step cur"><span class="ix">1</span><div class="b"><h3>Sign in with GGG</h3><p>Your browser opens the official GGG page. Lootwise never sees your password, and the sign-in lasts 10 hours.</p><div><button class="btn primary">Sign in with GGG</button></div></div></div>
+   <div class="step"><span class="ix">2</span><div class="b"><h3>Pick your League</h3><p>Defaults to the current challenge League.</p><div><button class="sel">Allflame ${chev}</button></div></div></div>
+   <div class="step"><span class="ix">3</span><div class="b"><h3>Choose stash tabs</h3><p>Available after signing in. Every tab except remove-only tabs is selected by default.</p>
+     <div class="panel" style="padding:8px 16px">${D.tabs.map(t=>`<div class="prow"><span class="cb ${t.removeOnly?'':'on'}" style="opacity:.55"></span><span class="t muted">${t.name}</span>${t.removeOnly?'<span class="pill">Remove-only</span>':''}</div>`).join('')}</div></div></div>
+  </div>`);
+}
+
+/* ---------------- overlays on a flat stand-in game ---------------- */
+function gameBg(mode,hover){
+  let s=`<svg class="bg" width="1280" height="798" viewBox="0 0 1280 798" aria-hidden="true"><rect width="1280" height="798" fill="#15171b"/>`;
+  s+=`<rect x="0" y="560" width="1280" height="238" fill="#101216"/>`;
+  s+=`<circle cx="96" cy="700" r="58" fill="#5a1f22"/><circle cx="96" cy="722" r="58" fill="#15171b" opacity=".35"/><circle cx="1184" cy="700" r="58" fill="#1f3a5a"/>`;
+  for(let i=0;i<10;i++)s+=`<rect x="${300+i*66}" y="722" width="52" height="52" rx="6" fill="#1b1e24" stroke="#2a2e36"/>`;
+  if(mode==='stash'){
+    s+=`<rect x="64" y="40" width="508" height="560" rx="6" fill="#1a1d23" stroke="#2c3038"/>`;
+    for(let r=0;r<12;r++)for(let c=0;c<12;c++)s+=`<rect x="${88+c*40}" y="${64+r*40}" width="38" height="38" fill="#1e2127" stroke="#272b32"/>`;
+    const items=[[0,0,2,3,'#3a4a5c'],[2,0,2,2,'#4a3a58'],[4,1,1,1,'#5c4a2a'],[5,0,2,4,'#2e4a42'],[7,2,1,1,'#5c3a3a'],[0,4,2,2,'#4a4a30'],[2,3,2,3,'#33415c'],[8,0,3,2,'#4a3040'],[8,3,2,2,'#2e4a42'],[0,7,4,2,'#3a4a5c'],[5,6,2,2,'#5c4a2a'],[9,6,1,3,'#4a3a58'],[3,9,3,2,'#33415c']];
+    items.forEach(([c,r,w,h,col],i)=>{const hov=i===hover;s+=`<rect x="${88+c*40+2}" y="${64+r*40+2}" width="${w*40-6}" height="${h*40-6}" rx="3" fill="${col}" stroke="${hov?'#e8eaed':'#14161a'}" stroke-width="${hov?2:1}"/>`});
+    s+=`<rect x="640" y="40" width="520" height="150" rx="6" fill="#1a1d23" stroke="#2c3038"/>`;
+    s+=`<path d="M 468 224 l 0 22 l 6 -5 l 5 11 l 4 -2 l -5 -11 l 8 0 z" fill="#f2f3f5" stroke="#15171b" stroke-width="1.5"/>`;
+  } else {
+    s+=`<rect x="120" y="70" width="560" height="440" rx="8" fill="#1a1d23" stroke="#2c3038"/>`;
+    s+=`<text x="400" y="110" text-anchor="middle" font-size="16" fill="#8e929a" font-family="IBM Plex Sans">Divine Font</text>`;
+    const gx=[190,330,470];
+    const nm=['Molten Strike of the Zenith','Soulrend of Reaping','Viper Strike of the Mamba'];
+    gx.forEach((x,i)=>{s+=`<rect x="${x-26}" y="150" width="52" height="52" rx="8" fill="#23353f" stroke="#3a5560"/><text x="${x}" y="232" text-anchor="middle" font-size="13" fill="#b8bcc4" font-family="IBM Plex Sans">${nm[i].split(' of ')[0]}</text><text x="${x}" y="250" text-anchor="middle" font-size="12" fill="#7d8189" font-family="IBM Plex Sans">${nm[i].split(' of ')[1]?'of '+nm[i].split(' of ')[1]:''}</text>`});
+    s+=`<rect x="574" y="150" width="52" height="52" rx="8" fill="#2c2630" stroke="#4a3f52"/><text x="600" y="232" text-anchor="middle" font-size="13" fill="#b8bcc4" font-family="IBM Plex Sans">???</text>`;
+    s+=`<rect x="330" y="300" width="140" height="120" rx="8" fill="#1d2025" stroke="#2c3038"/><rect x="368" y="318" width="64" height="64" rx="10" fill="#23353f" stroke="#3a5560"/>`;
+    s+=`<text x="400" y="404" text-anchor="middle" font-size="12" fill="#7d8189" font-family="IBM Plex Sans">Offered gem</text>`;
+  }
+  return s+'</svg>';
+}
+function overlay(kind,id){
+  const c=CHECKS.find(x=>x.id===id)||CHECKS.find(x=>x.kind===kind);
+  let pos;
+  if(c.kind==='gem') pos='left:704px;top:70px';
+  else pos='left:482px;top:206px';
+  const hover={commodity:2,exchange:4,low:6,stale:0,rare:3,ratelimit:3,none:5,unavail:7}[c.kind];
+  return `<div class="game" role="img" aria-label="Stand-in for the game, drawn flat">${gameBg(c.kind==='gem'?'font':'stash',hover)}<div class="gamecard" style="${pos}">${cardFor(c)}</div><div class="gamehud">Stand-in for the game. The card is the only opaque Lootwise surface and never takes focus.</div></div>`;
+}
+
+/* ---------------- surfaces & router ---------------- */
+const SURF=[
+ {id:'overview',g:'screen',l:'Overview',k:'1',r:()=>shell('overview',scrOverview())},
+ {id:'checks',g:'screen',l:'Price checks',k:'2',r:()=>shell('checks',scrChecks())},
+ {id:'sessions',g:'screen',l:'Sessions',k:'3',r:()=>shell('sessions',scrSessions())},
+ {id:'stash',g:'screen',l:'Stash',k:'4',r:()=>shell('stash',scrStash())},
+ {id:'settings',g:'screen',l:'Settings',k:'5',r:()=>shell('settings',scrSettings())},
+ {id:'first',g:'state',l:'First run',r:()=>shell('overview',scrOverview({firstRun:1}),{firstRun:1})},
+ {id:'setup',g:'state',l:'Sign-in and setup',r:()=>shell('overview',scrSetup(),{firstRun:1})},
+ {id:'signedout',g:'state',l:'Signed out',r:()=>shell('overview',scrOverview({signedOut:1}),{signedOut:1})},
+ {id:'stale',g:'state',l:'Prices stale',r:()=>shell('overview',scrOverview({stale:1}),{stale:1})},
+ {id:'loading',g:'state',l:'Loading',r:()=>shell('overview',scrOverview({loading:1}))},
+ {id:'o-commodity',g:'overlay',l:'Commodity Item',r:()=>overlay('commodity','h1')},
+ {id:'o-low',g:'overlay',l:'Low confidence',r:()=>overlay('low','h3')},
+ {id:'o-stale',g:'overlay',l:'Stale relay data',r:()=>overlay('stale','h9')},
+ {id:'o-rare',g:'overlay',l:'Rare · Live Search',r:()=>overlay('rare','h5')},
+ {id:'o-limit',g:'overlay',l:'Rate-limited',r:()=>overlay('ratelimit','h4')},
+ {id:'o-none',g:'overlay',l:'Not a Commodity Item',r:()=>overlay('none','h7')},
+ {id:'o-unavail',g:'overlay',l:'League unavailable',r:()=>overlay('unavail','h10')},
+ {id:'o-font',g:'overlay',l:'Screen Price Check',r:()=>overlay('gem','h2')},
+];
+let cur='overview', prev='overview';
+function go(id,extra){
+  if(!SURF.find(s=>s.id===id)) return;
+  if(!id.startsWith('o-')) prev=id; cur=id; Object.assign(ST,extra||{}); render();
+}
+function render(){
+  const s=SURF.find(x=>x.id===cur);
+  document.getElementById('win').innerHTML=s.r();
+  for(const g of ['screen','state','overlay'])
+    document.getElementById('g-'+g).innerHTML=SURF.filter(x=>x.g===g).map(x=>`<button class="chip" data-surf="${x.id}" aria-current="${x.id===cur}">${x.l}${x.k?` <span class="kc">${x.k}</span>`:''}</button>`).join('');
+  const sel=document.querySelector('.mrow[aria-selected=true]'); if(sel) sel.scrollIntoView({block:'nearest'});
+}
+const OVER={commodity:'o-commodity',exchange:'o-commodity',low:'o-low',stale:'o-stale',rare:'o-rare',ratelimit:'o-limit',none:'o-none',unavail:'o-unavail',gem:'o-font'};
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-go],[data-surf],[data-open],[data-over],[data-tab],[data-sess],[data-set]'); if(!t) return;
+  const d=t.dataset;
+  if(d.go) go(d.go); else if(d.surf) go(d.surf);
+  else if(d.open){ST.check=d.open; if(cur!=='checks')go('checks'); else render();}
+  else if(d.over){const c=CHECKS.find(x=>x.id===d.over);const sid=OVER[c.kind];go(sid);overrideOverlay(c);}
+  else if(d.tab!==undefined){ST.tab=+d.tab;render();}
+  else if(d.sess){ST.sess=d.sess;render();}
+  else if(d.set){ST.set=d.set;render();}
+});
+function overrideOverlay(c){document.getElementById('win').innerHTML=overlay(c.kind,c.id)}
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
+  const k=e.key;
+  if('12345'.includes(k)&&k.length===1){go(SURF[+k-1].id);return;}
+  if(k==='['||k===']'){const i=SURF.findIndex(s=>s.id===cur);go(SURF[(i+(k==='['?-1:1)+SURF.length)%SURF.length].id);return;}
+  if(k==='Escape'&&cur.startsWith('o-')){go(prev);return;}
+  if(k==='ArrowDown'||k==='ArrowUp'){
+    const d=k==='ArrowDown'?1:-1;
+    if(cur==='checks'){const i=Math.max(0,CHECKS.findIndex(c=>c.id===(ST.check||CHECKS[0].id)));ST.check=CHECKS[Math.min(CHECKS.length-1,Math.max(0,i+d))].id;render();e.preventDefault();}
+    else if(cur==='sessions'){const i=SESS.findIndex(s=>s.id===ST.sess);ST.sess=SESS[Math.min(SESS.length-1,Math.max(0,i+d))].id;render();e.preventDefault();}
+    else if(cur==='settings'){const i=SETS.findIndex(s=>s[0]===ST.set);ST.set=SETS[Math.min(SETS.length-1,Math.max(0,i+d))][0];render();e.preventDefault();}
+    else if(cur==='stash'){ST.tab=Math.min(D.tabs.length-1,Math.max(-1,ST.tab+d));render();e.preventDefault();}
+  }
+  if(k==='Enter'&&cur==='checks'&&document.activeElement===document.body){const c=CHECKS.find(x=>x.id===(ST.check||CHECKS[0].id));go(OVER[c.kind]);overrideOverlay(c);}
+});
+if(SURF.some(s=>s.id===location.hash.slice(1)))cur=location.hash.slice(1);
+function fit(){const st=document.querySelector('.stage');st.style.zoom=Math.min(1,(innerWidth-32)/1280)}
+addEventListener('resize',fit);fit();
+render();
+</script>
+</body>
+</html>

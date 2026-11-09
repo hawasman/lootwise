@@ -1,0 +1,1120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lootwise · Reference design</title>
+<style>
+@font-face{font-family:"Public Sans";font-weight:400;src:url(assets/PublicSans-400.ttf) format("truetype");font-display:block}
+@font-face{font-family:"Public Sans";font-weight:500;src:url(assets/PublicSans-500.ttf) format("truetype");font-display:block}
+@font-face{font-family:"Public Sans";font-weight:600;src:url(assets/PublicSans-600.ttf) format("truetype");font-display:block}
+@font-face{font-family:"Public Sans";font-weight:700;src:url(assets/PublicSans-700.ttf) format("truetype");font-display:block}
+:root{
+  --ground:#171719;--surface:#131217;--raised:#212023;--border:#222224;--rule:#1b1a1f;--control:#3a3a3e;
+  --text:#fff;--muted:#8a8c92;--accent:#e4c76b;--positive:#44a282;--negative:#e5566f;--warning:#d9a441;
+  --pill-positive-bg:#1b2828;--pill-positive-ink:#5fc39c;--pill-negative-bg:#2c1a20;--pill-negative-ink:#e5566f;
+  --pill-warning-bg:#2a2416;--pill-warning-ink:#d9a441;--pill-neutral-bg:#212023;--pill-neutral-ink:#bdbdc0;
+  --radius-card:6px;--gap:24px;--pad:32px;--fs-hero:96px;--fs-title:26px;--fs-lead:32px;--fs-kpi:20px;--fs-section:16px;--fs-body:13px;--fs-small:12px;--fs-meta:11px;
+  --font:"Public Sans",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html{background:#0b0b0c}
+body{font:400 var(--fs-body)/20px var(--font);color:var(--text);font-variant-numeric:tabular-nums;background:#0b0b0c;min-height:100vh;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0;font-variant-numeric:inherit}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:1px solid var(--accent);outline-offset:2px}
+a{color:var(--text);text-decoration:none}
+.muted{color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- page chrome (outside the app) ---------- */
+.chrome{width:1280px;margin:0 auto;padding:20px 0 16px}
+.chrome-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;color:var(--muted);font-size:13px}
+.chrome-top b{color:var(--text);font-weight:600}
+.sw{display:flex;gap:6px 32px;flex-wrap:wrap}
+.sw-g{display:flex;align-items:center;gap:4px 14px;flex-wrap:wrap}
+.sw-g>span{color:#bdbdc0;font-size:13px;font-weight:600;margin-right:2px}
+.sw button{font-size:13px;color:var(--muted);height:26px;position:relative;white-space:nowrap}
+.sw button:hover{color:var(--text)}
+.sw button[aria-current=true]{color:var(--text)}
+.sw button[aria-current=true]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--accent)}
+.fit{margin:0 auto;position:relative}
+.fitwrap{overflow-x:auto;padding:0 0 24px}
+.stage{width:1280px;height:800px;position:relative;overflow:hidden;border:1px solid var(--border);border-radius:8px;background:var(--ground);transform-origin:0 0}
+
+/* ---------- the app window ---------- */
+.win{position:absolute;inset:0;display:grid;grid-template-columns:72px 1fr;grid-template-rows:44px 1fr 32px;background:var(--ground)}
+.rail{grid-row:1/4;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:12px 0}
+.mark{width:40px;height:40px;display:grid;place-items:center;margin-bottom:20px}
+.nav{display:flex;flex-direction:column;gap:2px;flex:1;width:100%}
+.nav button,.nav-b button{width:100%;height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);font-size:var(--fs-meta);line-height:14px}
+.nav button:hover,.nav-b button:hover{color:var(--text)}
+.nav button span,.nav-b button span{position:relative;padding-bottom:3px}
+.nav button[aria-current=true],.nav-b button[aria-current=true]{color:var(--text)}
+.nav button[aria-current=true] span::after,.nav-b button[aria-current=true] span::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--accent)}
+.nav-b{width:100%}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 var(--pad);border-bottom:1px solid var(--border)}
+.topbar .l,.topbar .r{display:flex;align-items:center;gap:16px}
+.brand{font-weight:600;font-size:var(--fs-body)}
+.vr{width:1px;height:16px;background:var(--border)}
+.status{display:flex;align-items:center;justify-content:space-between;padding:0 var(--pad);border-top:1px solid var(--border);font-size:var(--fs-small);color:var(--muted)}
+.status .l,.status .r{display:flex;align-items:center;gap:20px}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--positive);margin-right:8px;vertical-align:1px}
+.dot.bad{background:var(--negative)}.dot.warn{background:var(--warning)}.dot.off{background:var(--control)}
+.content{overflow:auto;padding:28px var(--pad) 24px;position:relative}
+.content::-webkit-scrollbar{width:8px}.content::-webkit-scrollbar-thumb{background:var(--raised);border-radius:4px}
+.trow{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;min-height:56px}
+h1{font-size:var(--fs-title);line-height:32px;font-weight:600;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:var(--fs-body);margin-top:4px;max-width:720px}
+.sub b{color:var(--text);font-weight:500}
+.acts{display:flex;gap:12px;align-items:center}
+.btn{height:34px;padding:0 16px;border-radius:999px;border:1px solid var(--control);font-weight:500;font-size:var(--fs-body);display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{border-color:#6a6a70}
+.btn.primary{background:#fff;color:#111;border-color:#fff}
+.btn.primary:hover{background:#e8e8ea}
+.btn.sm{height:28px;padding:0 12px;font-size:var(--fs-small)}
+.btn[disabled]{color:var(--muted);cursor:default;border-color:var(--raised)}
+.tbtn{color:var(--text);font-weight:500;font-size:var(--fs-body);border-bottom:1px solid var(--control)}
+.tbtn:hover{border-color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);padding:24px;display:flex;flex-direction:column;min-width:0}
+.card.tight{padding:20px 24px 12px}
+.ch{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}
+.ct{font-size:var(--fs-section);font-weight:600;line-height:24px}
+.lab{color:var(--muted);font-size:var(--fs-body)}
+.lead{font-size:var(--fs-lead);line-height:40px;font-weight:600;letter-spacing:-.01em}
+.lead small,.hero-n small{font-size:var(--fs-section);color:var(--muted);font-weight:400;letter-spacing:0;margin-left:6px}
+.kpi{font-size:var(--fs-kpi);line-height:28px;font-weight:500}
+.kpi small{font-size:var(--fs-body);color:var(--muted);font-weight:400;margin-left:4px}
+.n{text-align:right}
+.seg{display:flex;gap:20px}
+.seg button{color:var(--muted);font-size:var(--fs-body);position:relative;height:28px}
+.seg button:hover{color:var(--text)}
+.seg button[aria-pressed=true]{color:var(--text)}
+.seg button[aria-pressed=true]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--accent)}
+.pill{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;font-size:var(--fs-small);font-weight:500;white-space:nowrap;flex:none;background:var(--pill-neutral-bg);color:var(--pill-neutral-ink)}
+.pill.pos{background:var(--pill-positive-bg);color:var(--pill-positive-ink)}
+.pill.neg{background:var(--pill-negative-bg);color:var(--pill-negative-ink)}
+.pill.warn{background:var(--pill-warning-bg);color:var(--pill-warning-ink)}
+.kb{display:inline-flex;gap:4px;align-items:center}
+.kb i{font-style:normal;display:inline-flex;align-items:center;height:20px;padding:0 6px;border:1px solid var(--control);border-radius:4px;font-size:var(--fs-meta);color:#bdbdc0;line-height:18px}
+select,.inp{height:32px;background:var(--surface);color:var(--text);border:1px solid var(--control);border-radius:6px;font:inherit;padding:0 10px;font-variant-numeric:tabular-nums}
+select{padding-right:6px}
+.inp{width:56px;text-align:right}
+.note{display:flex;align-items:center;gap:12px;border:1px solid #3d3419;border-radius:6px;padding:0 14px;min-height:40px;font-size:var(--fs-body);margin-bottom:16px;color:#e6dcc0;justify-content:space-between}
+.note.bad{border-color:#4a2530;color:#f0c6cd}
+.note .acts{gap:16px}
+.sk{display:block;background:var(--raised);border-radius:3px}
+.dashed{border:1px dashed var(--control);border-radius:6px;padding:10px 14px;color:var(--muted);font-size:var(--fs-body)}
+.row2{display:grid;grid-template-columns:760px 360px;grid-template-rows:minmax(0,1fr);gap:var(--gap);align-items:stretch}
+.rowL{display:grid;grid-template-columns:360px 1fr;grid-template-rows:minmax(0,1fr);gap:var(--gap);align-items:stretch}
+
+/* session hero */
+.hero{display:grid;grid-template-columns:1fr 400px;padding:0}
+.hero .hl{padding:24px 32px;display:flex;flex-direction:column;justify-content:space-between;min-width:0}
+.hero-n{font-size:var(--fs-hero);line-height:100px;font-weight:700;letter-spacing:-.02em;color:var(--accent)}
+.hero-n small{font-size:28px;margin-left:10px;font-weight:500}
+.hero-n.off{color:var(--muted)}
+.hero .hr{border-left:1px solid var(--border);padding:12px 32px;display:flex;flex-direction:column;justify-content:space-between}
+.stat{display:flex;justify-content:space-between;align-items:center;height:64px;border-top:1px solid var(--rule)}
+.stat:first-child{border-top:0}
+.stat .s2{font-size:var(--fs-small);color:var(--muted);line-height:16px}
+.stat .v{font-size:var(--fs-kpi);font-weight:500;line-height:28px;text-align:right}
+.stat .v small{font-size:var(--fs-body);color:var(--muted);font-weight:400;margin-left:4px}
+
+/* lists */
+.list{display:flex;flex-direction:column}
+.li{display:flex;align-items:center;justify-content:space-between;border-left:1px solid transparent;padding:0 14px;text-align:left;width:100%;gap:12px;color:var(--text)}
+.li:hover{border-left-color:var(--control)}
+.li[aria-selected=true]{border-left-color:var(--accent)}
+.li .nm{display:flex;flex-direction:column;min-width:0;flex:1}
+.li .nm span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li .vv{display:flex;flex-direction:column;align-items:flex-end;flex:none;width:96px}
+.li .vv small,.li .nm small{white-space:nowrap;font-size:var(--fs-small);color:var(--muted);line-height:16px}
+.bar{height:2px;background:var(--raised);margin-top:8px;width:100%}
+.bar i{display:block;height:2px;background:#6a6a70}
+.bar i.top{background:#fff}
+.tbl{border-collapse:collapse;width:100%;font-size:var(--fs-body)}
+.tbl th{font-weight:400;color:var(--muted);font-size:var(--fs-small);text-align:left;height:36px;position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--control);padding:0 8px}
+.tbl td{height:42px;border-bottom:1px solid var(--rule);padding:0 8px}
+.tbl th.n,.tbl td.n{text-align:right}
+.tbl td.dash{color:var(--muted)}
+.tbl tfoot td{border-bottom:0;font-weight:600;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--control)}
+.scroll{overflow:auto;min-height:0}
+.scroll::-webkit-scrollbar{width:8px}.scroll::-webkit-scrollbar-thumb{background:var(--raised);border-radius:4px}
+
+/* settings and setup */
+.srow{display:grid;grid-template-columns:380px 1fr;gap:var(--gap);padding:28px 0;border-top:1px solid var(--border)}
+.srow:first-of-type{border-top:0;padding-top:0}
+.srow h2{font-size:var(--fs-section);font-weight:600;line-height:24px}
+.srow p{color:var(--muted);margin-top:6px;max-width:340px}
+.fr{display:flex;align-items:center;justify-content:space-between;min-height:56px;gap:16px;border-bottom:1px solid var(--rule)}
+.fr:last-child{border-bottom:0}
+.fr .t{font-weight:500}
+.fr .d{color:var(--muted);font-size:var(--fs-small);margin-top:2px}
+.rec{display:inline-flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--control);border-radius:6px;height:34px;padding:0 10px;width:200px}
+.rec.on{border-color:var(--accent)}
+.cb{width:14px;height:14px;border:1px solid var(--control);border-radius:3px;display:inline-grid;place-items:center;flex:none}
+.cb.on{border-color:var(--accent)}
+.cb.on::after{content:"";width:7px;height:4px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.rd{width:14px;height:14px;border:1px solid var(--control);border-radius:50%;display:inline-grid;place-items:center;flex:none}
+.rd.on{border-color:var(--accent)}
+.rd.on::after{content:"";width:6px;height:6px;border-radius:50%;background:#fff}
+.opt{display:flex;align-items:center;gap:12px;min-height:48px;border-bottom:1px solid var(--rule);width:100%;text-align:left}
+.opt:last-child{border-bottom:0}
+.opt .g{flex:1;min-width:0}
+.opt .d{color:var(--muted);font-size:var(--fs-small)}
+.prog{height:4px;border-radius:2px;background:var(--raised);margin:8px 0 4px}
+.prog i{display:block;height:4px;border-radius:2px;background:#fff}
+.spin{width:20px;height:20px;border:2px solid var(--control);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.chartwrap{position:relative}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--control);border-radius:4px;padding:6px 10px;font-size:var(--fs-small);white-space:nowrap;display:none;z-index:3;line-height:16px}
+.tip span{color:var(--muted)}
+
+/* command palette (Ctrl+K) */
+.win.pal-open .content,.win.pal-open .rail,.win.pal-open .topbar{opacity:.45}
+.pal{position:absolute;left:50%;top:88px;width:560px;margin-left:-280px;background:var(--surface);border:1px solid var(--control);border-radius:8px;z-index:11;overflow:hidden}
+.pal .in{display:flex;align-items:center;gap:12px;padding:0 16px;height:52px;border-bottom:1px solid var(--border)}
+.pal .in input{flex:1;background:none;border:0;color:var(--text);font:inherit;font-size:var(--fs-section);outline:0;height:50px}
+.pal .in input::placeholder{color:var(--muted)}
+.pal .gl{padding:12px 16px 4px;font-size:var(--fs-small);color:var(--muted)}
+.pal .pi{display:flex;align-items:center;justify-content:space-between;height:40px;padding:0 16px;border-left:1px solid transparent;width:100%;text-align:left}
+.pal .pi[aria-selected=true]{border-left-color:var(--accent);background:var(--raised)}
+.pal .pf{display:flex;justify-content:space-between;padding:0 16px;height:36px;align-items:center;border-top:1px solid var(--border);font-size:var(--fs-small);color:var(--muted)}
+
+/* ---------- game stand-in and overlay card ---------- */
+.game{position:absolute;inset:0;background:#0e0e10}
+.game .panel{position:absolute;background:#121214;border:1px solid #1d1d20}
+.game .pt{position:absolute;color:#8a8c92;font-size:var(--fs-small)}
+.game .cells{position:absolute;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cpath d='M0 .5H44M.5 0V44' stroke='%231a1b1e'/%3E%3C/svg%3E");background-size:44px 44px;border-right:1px solid #1a1b1e;border-bottom:1px solid #1a1b1e}
+.game .it{position:absolute;background:#1c1d21;border:1px solid #2a2b30}
+.game .it.b{background:#202126}
+.game .it.hov{border-color:#8a8c92;background:#26272c}
+.game .it::after{content:"";position:absolute;left:30%;right:30%;top:42%;height:1px;background:#34353b}
+.game .slot{position:absolute;border:1px solid #1f2024;background:#101012}
+.game .fontp{position:absolute;background:#121214;border:1px solid #232428;border-radius:4px}
+.game .opt-g{position:absolute;border:1px solid #232428;background:#16171a;border-radius:4px;display:flex;flex-direction:column;justify-content:center;padding:0 18px}
+.cur{position:absolute;width:20px;height:26px;pointer-events:none}
+.qc{position:absolute;width:320px;background:var(--surface);border:1px solid #34343a;border-radius:var(--radius-card);padding:16px;box-shadow:0 12px 28px rgba(0,0,0,.2);/* taste-skill-ignore */display:flex;flex-direction:column}
+.qc .qp{display:flex;justify-content:space-between;align-items:baseline;padding:2px 0 0}
+.qc .qp .big{font-size:48px;line-height:54px;font-weight:700;letter-spacing:-.02em;color:var(--accent)}
+.qc .qp .big small{font-size:var(--fs-section);font-weight:400;color:var(--muted);margin-left:6px;letter-spacing:0}
+.qc .qp .alt{font-size:var(--fs-kpi);color:var(--muted);font-weight:400}
+.qc .qn{padding:6px 0 12px;border-bottom:1px solid var(--rule)}
+.qc .qn h1{display:block;font-size:var(--fs-section);line-height:22px;font-weight:600;letter-spacing:0}
+.qc .qn span{color:var(--muted);font-size:var(--fs-small);line-height:16px;display:block;margin-top:2px}
+.qc .qn .why{color:var(--pill-warning-ink);margin-top:6px}
+.qc .lg{display:flex;justify-content:space-between;height:28px;align-items:center}
+.qc .lg span:first-child{color:var(--muted)}
+.qc .qf{display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:8px;border-top:1px solid var(--rule)}
+.qc .qf a{color:var(--text);font-weight:500;font-size:var(--fs-body);border-bottom:1px solid var(--control)}
+.qc .hint{margin-top:12px;padding-top:10px;border-top:1px solid var(--rule);font-size:var(--fs-small);color:var(--muted);text-align:center}
+.qc .trh{display:flex;justify-content:space-between;margin-top:10px;font-size:var(--fs-small);color:var(--muted)}
+.qc .trh b{color:var(--text);font-weight:500}
+.fl{display:grid;grid-template-columns:14px 1fr 56px 56px;gap:10px;align-items:center;height:32px}
+.fl.h{height:24px;color:var(--muted);font-size:var(--fs-small)}
+.fl .r{text-align:right}
+.fl.off .lbl{color:var(--muted)}
+.fl .inp{height:24px;width:56px;font-size:var(--fs-small);padding:0 6px}
+.fl.off .inp{color:var(--muted)}
+.opr{display:flex;align-items:center;justify-content:space-between;height:56px;border-top:1px solid var(--rule);border-left:1px solid transparent;padding-left:12px;margin-left:-13px;gap:12px}
+.opr.best{border-left-color:var(--accent)}
+.opr .a{display:flex;flex-direction:column;min-width:0}
+.opr .a span:first-child{font-weight:600}
+.opr .b{display:flex;flex-direction:column;align-items:flex-end;flex:none}
+.opr .b span:first-child{font-size:var(--fs-section);font-weight:600}
+.opr .a span:last-child,.opr .b span:last-child{font-size:var(--fs-small);color:var(--muted);line-height:16px}
+@media (max-width:1320px){.chrome{width:100%;padding-left:20px;padding-right:20px}.chrome-top{flex-wrap:wrap;gap:6px}}
+</style>
+</head>
+<body>
+<div class="chrome">
+  <div class="chrome-top"><div><b>Lootwise</b> · reference design &nbsp; Allflame, prices from the local relay mirror</div><div>← → switch surface &nbsp;·&nbsp; 1–3 destinations &nbsp;·&nbsp; Ctrl K palette</div></div>
+  <nav class="sw" id="sw" aria-label="Surfaces"></nav>
+</div>
+<div class="fitwrap"><div class="fit" id="fit"><div class="stage" id="stage"></div></div></div>
+
+<script>
+const P = {
+ "rate": 502.5,
+ "ex": {
+  "divine": {
+   "id": "divine",
+   "name": "Divine Orb",
+   "c": 502.5
+  },
+  "chaos": {
+   "id": "chaos",
+   "name": "Chaos Orb",
+   "c": 1
+  },
+  "exalted": {
+   "id": "exalted",
+   "name": "Exalted",
+   "c": 2.78
+  },
+  "annul": {
+   "id": "annul",
+   "name": "Annul",
+   "c": 21.45
+  },
+  "ancient-orb": {
+   "id": "ancient-orb",
+   "name": "Ancient Orb",
+   "c": 20.03
+  },
+  "fracturing-orb": {
+   "id": "fracturing-orb",
+   "name": "Fracturing Orb",
+   "c": 471.6
+  },
+  "awakeners-orb": {
+   "id": "awakeners-orb",
+   "name": "Awakener's Orb",
+   "c": 1319
+  },
+  "horned-scarab-of-preservation": {
+   "id": "horned-scarab-of-preservation",
+   "name": "Horned Scarab of Preservation",
+   "c": 604
+  },
+  "harvest-scarab-of-doubling": {
+   "id": "harvest-scarab-of-doubling",
+   "name": "Harvest Scarab of Doubling",
+   "c": 34.93
+  },
+  "cartography-scarab-of-risk": {
+   "id": "cartography-scarab-of-risk",
+   "name": "Cartography Scarab of Risk",
+   "c": 43.76
+  },
+  "ultimatum-scarab-of-catalysing": {
+   "id": "ultimatum-scarab-of-catalysing",
+   "name": "Ultimatum Scarab of Catalysing",
+   "c": 93.33
+  },
+  "faceted-fossil": {
+   "id": "faceted-fossil",
+   "name": "Faceted Fossil",
+   "c": 502.5
+  },
+  "hollow-fossil": {
+   "id": "hollow-fossil",
+   "name": "Hollow Fossil",
+   "c": 293.5
+  },
+  "cosmic-fragment": {
+   "id": "cosmic-fragment",
+   "name": "Cosmic Fragment",
+   "c": 613.3
+  },
+  "devouring-fragment": {
+   "id": "devouring-fragment",
+   "name": "Devouring Fragment",
+   "c": 905.2
+  },
+  "syndicate-medallion": {
+   "id": "syndicate-medallion",
+   "name": "Syndicate Medallion",
+   "c": 2390
+  },
+  "the-immortal": {
+   "id": "the-immortal",
+   "name": "The Immortal",
+   "c": 12266
+  },
+  "the-apothecary": {
+   "id": "the-apothecary",
+   "name": "The Apothecary",
+   "c": 22407
+  }
+ },
+ "uniq": {
+  "garb": {
+   "name": "Garb of the Ephemeral",
+   "base": "Savant's Robe",
+   "variant": "",
+   "c": 2512,
+   "d": 5,
+   "n": 696,
+   "sp": [
+    0,
+    2.47,
+    0.12,
+    3.04,
+    18.99,
+    15.52,
+    25.41
+   ],
+   "tc": 25.41
+  },
+  "omey": {
+   "name": "Omeyocan",
+   "base": "Carnal Boots",
+   "variant": "",
+   "c": 1809,
+   "d": 3.6,
+   "n": 75,
+   "sp": [
+    0,
+    -7.61,
+    27.21,
+    30.81,
+    42.74,
+    57.89,
+    91.19
+   ],
+   "tc": 91.19
+  },
+  "door": {
+   "name": "Death's Door",
+   "base": "Crusader Boots",
+   "variant": "",
+   "c": 2010,
+   "d": 4,
+   "n": 75,
+   "sp": [
+    0,
+    2.47,
+    5.29,
+    26.28,
+    21.09,
+    15.52,
+    25.41
+   ],
+   "tc": 25.41
+  },
+  "crest": {
+   "name": "Crest of Desire",
+   "base": "Fluted Bascinet",
+   "variant": "",
+   "c": 2060,
+   "d": 4.1,
+   "n": 58,
+   "sp": [
+    0,
+    2.16,
+    46.57,
+    12.9,
+    77.95,
+    130.4,
+    156.3
+   ],
+   "tc": 156.3
+  },
+  "atz": {
+   "name": "Atziri's Splendour",
+   "base": "Sacrificial Garb",
+   "variant": "Evasion",
+   "c": 1508,
+   "d": 3,
+   "n": 7,
+   "sp": []
+  }
+ },
+ "gems": [
+  {
+   "name": "Static Strike of Gathering Lightning",
+   "c": 2512,
+   "d": 5,
+   "n": 3
+  },
+  {
+   "name": "Storm Burst of Repulsion",
+   "c": 2512,
+   "d": 5,
+   "n": 9
+  },
+  {
+   "name": "Summon Stone Golem of Safeguarding",
+   "c": 1508,
+   "d": 3,
+   "n": 11
+  },
+  {
+   "name": "Dual Strike of Ambidexterity",
+   "c": 1005,
+   "d": 2,
+   "n": 9
+  },
+  {
+   "name": "Detonate Dead of Scavenging",
+   "c": 1005,
+   "d": 2,
+   "n": 6
+  },
+  {
+   "name": "Elemental Hit of the Spectrum",
+   "c": 1005,
+   "d": 2,
+   "n": 10
+  },
+  {
+   "name": "Pact of Beidat",
+   "c": 1005,
+   "d": 2,
+   "n": 44
+  },
+  {
+   "name": "Herald of Agony",
+   "c": 753.8,
+   "d": 1.5,
+   "n": 6
+  },
+  {
+   "name": "Cyclone of Tumult",
+   "c": 721,
+   "d": 1.43,
+   "n": 10
+  },
+  {
+   "name": "Animate Weapon of Ranged Arms",
+   "c": 656.2,
+   "d": 1.31,
+   "n": 9
+  },
+  {
+   "name": "Flame Surge of Combusting",
+   "c": 653.5,
+   "d": 1.3,
+   "n": 4
+  },
+  {
+   "name": "Volatile Dead of Seething",
+   "c": 653.2,
+   "d": 1.3,
+   "n": 9
+  },
+  {
+   "name": "Ethereal Knives of the Massacre",
+   "c": 652.5,
+   "d": 1.3,
+   "n": 10
+  },
+  {
+   "name": "Frostblink of Wintry Blast",
+   "c": 610,
+   "d": 1.21,
+   "n": 11
+  },
+  {
+   "name": "Double Strike of Momentum",
+   "c": 552.8,
+   "d": 1.1,
+   "n": 5
+  },
+  {
+   "name": "Toxic Rain of Withering",
+   "c": 502.5,
+   "d": 1,
+   "n": 5
+  },
+  {
+   "name": "Molten Strike of the Zenith",
+   "c": 502.5,
+   "d": 1,
+   "n": 3
+  },
+  {
+   "name": "Blight of Contagion",
+   "c": 502.5,
+   "d": 1,
+   "n": 27
+  },
+  {
+   "name": "Arc of Oscillating",
+   "c": 452.5,
+   "d": 0.9,
+   "n": 11
+  },
+  {
+   "name": "Spark of the Nova",
+   "c": 340.5,
+   "d": 0.68,
+   "n": 12
+  },
+  {
+   "name": "Lightning Strike of Arcing",
+   "c": 300,
+   "d": 0.6,
+   "n": 5
+  },
+  {
+   "name": "Scorching Ray of Immolation",
+   "c": 290.8,
+   "d": 0.58,
+   "n": 4
+  },
+  {
+   "name": "Ethereal Knives of Lingering Blades",
+   "c": 258,
+   "d": 0.51,
+   "n": 8
+  },
+  {
+   "name": "Purifying Flame of Revelations",
+   "c": 250,
+   "d": 0.5,
+   "n": 7
+  },
+  {
+   "name": "Summon Carrion Golem of Scavenging",
+   "c": 230.2,
+   "d": 0.46,
+   "n": 5
+  },
+  {
+   "name": "Incinerate of Venting",
+   "c": 213,
+   "d": 0.42,
+   "n": 6
+  },
+  {
+   "name": "Summon Chaos Golem of the Maelström",
+   "c": 200,
+   "d": 0.4,
+   "n": 8
+  },
+  {
+   "name": "Lacerate of Butchering",
+   "c": 200,
+   "d": 0.4,
+   "n": 5
+  },
+  {
+   "name": "Raise Zombie of Falling",
+   "c": 150,
+   "d": 0.3,
+   "n": 4
+  },
+  {
+   "name": "Soulrend of Reaping",
+   "c": 150,
+   "d": 0.3,
+   "n": 72
+  },
+  {
+   "name": "Tornado of Elemental Turbulence",
+   "c": 150,
+   "d": 0.3,
+   "n": 4
+  },
+  {
+   "name": "Consecrated Path of Endurance",
+   "c": 124.2,
+   "d": 0.25,
+   "n": 5
+  },
+  {
+   "name": "Pact of Lycia",
+   "c": 120,
+   "d": 0.24,
+   "n": 29
+  },
+  {
+   "name": "Ice Nova of Frostbolts",
+   "c": 110,
+   "d": 0.22,
+   "n": 3
+  },
+  {
+   "name": "Rage Vortex of Berserking",
+   "c": 104.7,
+   "d": 0.21,
+   "n": 9
+  },
+  {
+   "name": "Purity of Lightning",
+   "c": 100,
+   "d": 0.2,
+   "n": 10
+  },
+  {
+   "name": "Viper Strike of the Mamba",
+   "c": 100,
+   "d": 0.2,
+   "n": 34
+  },
+  {
+   "name": "Herald of Ash",
+   "c": 96,
+   "d": 0.19,
+   "n": 67
+  },
+  {
+   "name": "Raise Zombie of Slamming",
+   "c": 93,
+   "d": 0.19,
+   "n": 4
+  },
+  {
+   "name": "Pact of Ghorr",
+   "c": 88.2,
+   "d": 0.18,
+   "n": 35
+  }
+ ],
+ "updatedAt": "2026-11-09T12:52:21.172Z"
+};
+;
+/* ======================= data ======================= */
+const RATE = P.rate;                       // chaos per divine, relay mirror 2026-11-09
+const UO = (m,d,h,mi)=>Date.UTC(2026,m-1,d,h,mi);
+const n0 = n=>Math.round(n).toLocaleString('en-US');
+const dv = (c,r=RATE)=>(Math.round(c/r*10)/10).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+const sgn = (x,s)=>(x<0?'\u2212':'+')+s;
+const pc = x=>{const a=Math.abs(x);return a>=1000?n0(a):a>=100?parseFloat(a.toFixed(1)).toLocaleString('en-US'):a>=10?parseFloat(a.toFixed(1)).toString():parseFloat(a.toFixed(2)).toString()};
+const hm = t=>{const d=new Date(t);return String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0') /* taste-skill-ignore */};
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dm = t=>{const d=new Date(t);return MON[d.getUTCMonth()]+' '+d.getUTCDate()};
+const r1=x=>Math.round(x*10)/10;
+const NOW = UO(11,9,12,55), RELAY_OK = UO(11,9,12,52), RELAY_STALE = UO(11,9,9,41);
+
+const X = P.ex, Q = P.uniq;
+const mk=(name,qty,each)=>({name,qty,each,value:Math.round(qty*each)});
+const ex=(id,q)=>mk(X[id].name,q,X[id].c);
+const un=(k)=>mk(Q[k].name+' \u00b7 '+Q[k].base,1,Q[k].c);
+const TABS=[
+ {id:'cur',name:'Currency',kind:'Currency tab',rows:[ex('divine',12),ex('chaos',1840),ex('exalted',148),ex('annul',11),ex('ancient-orb',6),ex('fracturing-orb',3),ex('awakeners-orb',1)]},
+ {id:'sca',name:'Scarabs',kind:'Scarab tab',rows:[ex('horned-scarab-of-preservation',2),ex('harvest-scarab-of-doubling',9),ex('cartography-scarab-of-risk',14),ex('ultimatum-scarab-of-catalysing',4)]},
+ {id:'fra',name:'Fragments & Fossils',kind:'Fragment tab',rows:[ex('syndicate-medallion',1),ex('cosmic-fragment',5),ex('devouring-fragment',2),ex('faceted-fossil',3),ex('hollow-fossil',2)]},
+ {id:'car',name:'Cards',kind:'Divination tab',rows:[ex('the-apothecary',1),ex('the-immortal',1)]},
+ {id:'uni',name:'Uniques',kind:'Normal tab',rows:[un('crest'),un('garb'),un('door'),un('omey')]},
+];
+TABS.forEach(t=>{t.rows.sort((a,b)=>b.value-a.value);t.total=t.rows.reduce((s,r)=>s+r.value,0)});
+const TOTAL=TABS.reduce((s,t)=>s+t.total,0);
+const FRAG=TABS.find(t=>t.id==='fra').total;
+const TABS_BY=TABS.slice().sort((a,b)=>b.total-a.total);
+const ALL=TABS.flatMap(t=>t.rows.map(r=>({...r,tab:t.name}))).sort((a,b)=>b.value-a.value);
+console.assert(ALL.reduce((s,r)=>s+r.value,0)===TOTAL,'items sum to net worth');
+const UNP=(()=>{let s=7;const rnd=()=>(s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+ const A=['Havoc','Doom','Gale','Grim','Dire','Rage','Storm','Vile','Soul','Blight','Plague','Spirit'],B=['Veil','Grip','Brace','Fold','Spiral','Mark','Shell','Reach','Song','Crest','Knot','Hold'],
+ BA=['Hubris Circlet','Stygian Vise','Sorcerer Boots','Titanium Spirit Shield','Vaal Regalia','Imperial Claw','Opal Ring','Citrine Amulet','Crusader Gloves','Sadist Garb','Prismatic Ring','Coral Ring','Onyx Amulet','Cutlass','Zodiac Leather','Two-Stone Ring'];
+ const o=[];for(let i=0;i<47;i++)o.push({name:A[Math.floor(rnd()*12)]+' '+B[Math.floor(rnd()*12)],base:BA[Math.floor(rnd()*16)],ilvl:68+Math.floor(rnd()*18)});return o})();
+
+const lcg=(s)=>()=>(s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+function sessionSnaps(start,n,base,gain,seed,dipAt){const r=lcg(seed);const w=[];for(let i=0;i<n-1;i++)w.push(i===dipAt?-0.6:0.3+r()*1.4);
+ const sum=w.reduce((a,b)=>a+b,0);const inc=w.map(x=>Math.round(x/sum*gain));inc[inc.length-1]+=gain-inc.reduce((a,b)=>a+b,0);
+ const out=[{t:start,c:base}];let v=base;for(let i=0;i<n-1;i++){v+=inc[i];out.push({t:start+(i+1)*600000,c:v})}return out}
+const S3_GAIN=7120, S3_N=11;
+const S3_START=TOTAL-S3_GAIN;
+const SESS=[
+ {id:3,name:'Session 3',snaps:sessionSnaps(UO(11,9,11,8),S3_N,S3_START,S3_GAIN,11,5),running:true},
+ {id:2,name:'Session 2',snaps:sessionSnaps(UO(11,6,18,30),14,38300,8150,5,6)},
+ {id:1,name:'Session 1',snaps:sessionSnaps(UO(11,3,19,0),14,25150,6800,3,4)},
+];
+const MAN=[[10,27,20,10,9800],[10,28,21,30,12600],[10,29,19,45,15900],[10,30,22,0,17100],[11,1,20,20,21500],[11,2,21,5,24300],[11,3,18,50,25100],[11,4,21,30,33600],[11,5,20,40,35900],[11,6,18,25,38200],[11,7,21,0,49800],[11,8,23,10,56800],[11,9,8,40,Math.round(S3_START*0.995)]];
+const rateAt=t=>{const t0=UO(10,27,0,0),t1=UO(11,9,0,0);return t>=t1?RATE:Math.round(430+(t-t0)/(t1-t0)*(RATE-430))};
+const HIST=[...MAN.map(m=>({t:UO(m[0],m[1],m[2],m[3]),c:m[4]})),...SESS.flatMap(s=>s.snaps)].sort((a,b)=>a.t-b.t).map(p=>({...p,r:rateAt(p.t),d:p.c/rateAt(p.t)}));
+SESS.forEach(s=>{const a=s.snaps[0],b=s.snaps[s.snaps.length-1];s.t0=a.t;s.t1=b.t;s.hours=(b.t-a.t)/3600000;
+ s.da=r1(a.c/rateAt(a.t));s.db=r1(b.c/rateAt(b.t));s.gainD=r1(s.db-s.da);s.gainC=b.c-a.c;s.perH=s.gainD/s.hours;s.perHC=s.gainC/s.hours});
+console.assert(HIST[HIST.length-1].c===TOTAL,'last Snapshot = holdings total');
+console.assert(MAN[12][4]<S3_START,'manual before S3');
+const dur=h=>{const m=Math.round(h*60);return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' min' /* taste-skill-ignore */};
+const kbd=(...k)=>`<span class="kb">${k.map(x=>`<i>${x}</i>`).join('')}</span>`;
+
+/* ======================= charts, drawn by hand ======================= */
+function niceStep(range,count){const raw=range/count,mag=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/mag;return (f<=1?1:f<=2?2:f<=5?5:10)*mag}
+let CH={};
+function chart(o){
+  const W=o.w,H=o.h,L=48,R=o.right??72,T=o.top??24,B=28;
+  const t0=o.x0,t1=o.x1;const pts=o.pts;
+  let mn=Math.min(...pts.map(p=>p.v)),mx=Math.max(...pts.map(p=>p.v));
+  const step=niceStep(mx-mn||1,4);let y0=Math.floor(mn/step)*step,y1=Math.ceil((mx+step*0.05)/step)*step;if(y1<=mx)y1+=step;
+  const X=t=>L+(t-t0)/(t1-t0)*(W-L-R),Y=v=>T+(1-(v-y0)/(y1-y0))*(H-T-B);
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.label}" data-chart="${o.id}">`;
+  const dp=step<1?1:0;
+  for(let v=y0;v<=y1+1e-9;v+=step){const y=Y(v);s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="${v===y0?'#3a3a3e':'#242427'}" stroke-width="1"/><text x="${L-10}" y="${y+4}" text-anchor="end" font-size="11" fill="#8a8c92">${v.toLocaleString('en-US',{minimumFractionDigits:dp,maximumFractionDigits:dp})}</text>`}
+  (o.xt||[]).forEach(x=>{const px=X(x.t);if(px<L-1||px>W-R+1)return;s+=`<text x="${Math.min(Math.max(px,L+14),W-R-14)}" y="${H-8}" text-anchor="middle" font-size="11" fill="#8a8c92">${x.l}</text>`});
+  (o.bands||[]).forEach(b=>{if(b.t1<t0||b.t0>t1)return;const a=Math.max(X(b.t0),L),z=Math.min(X(b.t1),W-R),w=Math.max(z-a,3);
+    s+=`<rect x="${a}" y="${T}" width="${w}" height="${H-T-B}" fill="#e4c76b" fill-opacity=".12"/><text x="${a+w/2}" y="${T-8}" text-anchor="${a+w/2>W-R-30?'end':'middle'}" font-size="11" fill="#8a8c92">${b.l}</text>`});
+  (o.hlines||[]).forEach(h=>{const y=Y(h.v);s+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#8a8c92" stroke-dasharray="3 3"/><text x="${W-R-6}" y="${y-8}" text-anchor="end" font-size="11" fill="#bdbdc0">${h.l}</text>`});
+  (o.marks||[]).forEach(m=>{const px=X(m.t);s+=`<line x1="${px}" x2="${px}" y1="${H-B-6}" y2="${H-B}" stroke="#8a8c92" stroke-width="1"/>`});
+  (o.vlines||[]).forEach(m=>{const px=X(m.t);s+=`<line x1="${px}" x2="${px}" y1="${T}" y2="${H-B}" stroke="#8a8c92" stroke-dasharray="3 3"/><text x="${px+6}" y="${T+12}" font-size="11" fill="#bdbdc0">${m.l}</text>`});
+  s+=`<polyline fill="none" stroke="#e4c76b" stroke-width="2" stroke-linejoin="round" points="${pts.map(p=>X(p.t).toFixed(1)+','+Y(p.v).toFixed(1)).join(' ')}"/>`;
+  const last=pts[pts.length-1];s+=`<text x="${X(last.t)+10}" y="${Y(last.v)+4}" font-size="13" font-weight="600" fill="#fff">${last.v.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})}</text>`;
+  s+=`<line class="xh" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="#e4c76b" stroke-width="1" style="display:none"/></svg>`;
+  CH[o.id]={pts:pts.map(p=>({...p,px:X(p.t),py:Y(p.v)})),L,R,W,H,T,B};
+  return `<div class="chartwrap">${s}<div class="tip"></div></div>`;
+}
+document.addEventListener('mousemove',e=>{
+  const svg=e.target.closest&&e.target.closest('svg[data-chart]');document.querySelectorAll('.tip').forEach(t=>t.style.display='none');document.querySelectorAll('.xh').forEach(t=>t.style.display='none');
+  if(!svg)return;const c=CH[svg.dataset.chart];if(!c)return;const rc=svg.getBoundingClientRect(),sc=rc.width/c.W,x=(e.clientX-rc.left)/sc;
+  if(x<c.L||x>c.W-c.R)return;let b=c.pts[0];c.pts.forEach(p=>{if(Math.abs(p.px-x)<Math.abs(b.px-x))b=p});
+  const xh=svg.querySelector('.xh');xh.setAttribute('x1',b.px);xh.setAttribute('x2',b.px);xh.style.display='';
+  const tip=svg.parentNode.querySelector('.tip');tip.innerHTML=`${dm(b.t)} ${hm(b.t)} <span>·</span> <b style="font-weight:600">${b.v.toFixed(1)} div</b>${b.r?` <span>at ${b.r} c per div</span>`:''}`;
+  tip.style.display='block';const tw=tip.offsetWidth;tip.style.left=Math.min(Math.max(b.px*sc-tw/2,0),c.W*sc-tw)+'px';tip.style.top=(c.T-4)*sc+'px'});
+const xdays=(t0,t1,k)=>{const o=[];for(let t=Date.UTC(2026,9,27);t<=t1;t+=k*86400000)if(t>=t0)o.push({t,l:dm(t)});return o};
+
+/* ======================= small bits ======================= */
+const I={
+ session:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="7"/><path d="M9 5v4.2l2.8 1.8"/></svg>',
+ portfolio:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 14 6.5 9 10 12 16 4"/><path d="M2 16.2H16"/></svg>',
+ holdings:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4.5h14M2 9h14M2 13.5h8"/></svg>',
+ settings:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5h14M2 13h14"/><circle cx="6" cy="5" r="2" fill="#131217"/><circle cx="12" cy="13" r="2" fill="#131217"/></svg>',
+ mark:'<svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M4 21 10 14.5 15 18 24 7" stroke="#e4c76b" stroke-width="2" stroke-linejoin="round"/><path d="M4 24.5H24" stroke="#8a8c92" stroke-width="1"/></svg>',
+ ext:'<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 1h6v6M9 1 2 8"/></svg>',
+ search:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8a8c92" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5"/></svg>'
+};
+const FL={auth:'in',relay:'ok',loading:false,sess:'run',hold:'cur',hv:'tab',range:'league',rc:0,pal:false,pq:'',pi:0,tabsOn:{cur:1,sca:1,fra:1,car:1,uni:1,dump:1,old:0}};
+const AVAIL=592;   // content height under the title row: 724 window - 28 top - 24 bottom - 80 title row
+
+/* ======================= window chrome ======================= */
+function rail(route){
+  const it=[['session','Session','1'],['portfolio','Portfolio','2'],['holdings','Holdings','3']];
+  return `<aside class="rail"><div class="mark" title="Lootwise">${I.mark}</div>
+   <div class="nav">${it.map(([k,l,h])=>`<button data-go="${k}" ${route===k?'aria-current="true"':''} title="${l} (${h})" aria-label="${l}">${I[k]}<span>${l}</span></button>`).join('')}</div>
+   <div class="nav-b"><button data-go="settings" ${route==='settings'?'aria-current="true"':''} title="Settings" aria-label="Settings">${I.settings}<span>Settings</span></button></div></aside>`}
+function topbar(){
+  const out=FL.auth==='out',none=FL.auth==='none';
+  return `<header class="topbar"><div class="l"><span class="brand">Lootwise</span><span class="vr"></span><label class="lab" style="display:flex;align-items:center;gap:10px">League<select aria-label="League"><option>Allflame</option><option>Hardcore Allflame</option><option>Standard</option><option>Hardcore</option></select></label></div>
+   <div class="r"><span class="lab">${none?'<span class="dot off"></span>Not signed in':out?'<span class="dot bad"></span>Signed out':'<span class="dot"></span>Wanderer#1042 <span style="margin-left:8px">7 h 12 min of sign-in left</span>'}</span></div></header>`}
+function statusbar(){
+  const st=FL.relay==='stale';
+  return `<footer class="status"><div class="l"><span style="display:flex;gap:10px;align-items:center">${kbd('Ctrl','D')} Price Check</span><span style="display:flex;gap:10px;align-items:center">${kbd('Ctrl','Alt','D')} Screen Price Check</span></div>
+   <div class="r"><span>${FL.loading?'<span class="dot off"></span>Checking for new prices\u2026':st?`<span class="dot bad"></span>Prices from ${hm(RELAY_STALE)} (3 h 14 min old)`:`<span class="dot"></span>Prices updated ${hm(RELAY_OK)}, 3 min ago`}</span></div></footer>`}
+function noteBar(){
+  if(FL.auth==='out')return `<div class="note"><span>Your GGG sign-in expired at 12:50. Session 3 can't take Snapshots until you sign in again. Price Check still works.</span><span class="acts"><button class="tbtn" data-go="signin" style="white-space:nowrap">Sign in with GGG</button></span></div>`;
+  if(FL.relay==='stale')return `<div class="note bad"><span>Can't reach the price relay. Values use prices from ${hm(RELAY_STALE)}, 3 h 14 min old, and carry lower confidence.</span><span class="acts"><button class="tbtn">Retry</button></span></div>`;
+  return '';
+}
+const noteH=()=>noteBar()?56:0;
+
+/* ======================= Session (home) ======================= */
+const RECENT=[
+ {name:Q.garb.name,sub:'Unique \u00b7 Allflame',val:(Q.garb.c/RATE).toFixed(2)+' div',c:n0(Q.garb.c)+' c',ago:'3 min ago',to:'check'},
+ {name:'Havoc Crest',sub:'Rare \u00b7 Live Search',val:'6.50 div',c:'3,266 c',ago:'11 min ago',to:'check-rare'},
+ {name:'Divine Font',sub:'4 options \u00b7 Screen Price Check',val:'',c:'',ago:'24 min ago',to:'font'},
+ {name:Q.atz.name,sub:'Unique \u00b7 low confidence',val:'~'+(Q.atz.c/RATE).toFixed(2)+' div',c:n0(Q.atz.c)+' c',ago:'38 min ago',to:'check-low'},
+ {name:'Cinched Boots',sub:'Magic \u00b7 no market price',val:'\u2014',c:'no price',ago:'52 min ago',to:'check-none'},
+];
+(()=>{const G=P.gems,pick=n=>G.find(x=>x.name===n);const best=[pick('Storm Burst of Repulsion'),pick('Dual Strike of Ambidexterity'),pick('Frostblink of Wintry Blast')].sort((a,b)=>b.c-a.c)[0];
+ RECENT[2].val=(best.c/RATE).toFixed(2)+' div';RECENT[2].c=n0(best.c)+' c, best option'})();
+
+function recentCard(rows){
+  return `<section class="card tight" aria-label="Recent Price Checks"><div class="ch" style="margin-bottom:8px"><span class="ct">Recent Price Checks</span><span class="lab" style="font-size:var(--fs-small)">Select one to open it again</span></div>
+   <div class="list" role="listbox" aria-label="Recent Price Checks">${RECENT.slice(0,rows).map((r,i)=>`<button class="li" style="height:50px" role="option" aria-selected="${FL.rc===i}" data-rc="${i}"><span class="nm"><span style="font-weight:500">${r.name}</span><small>${r.sub}</small></span><span class="vv" style="width:112px"><span>${r.val}</span><small>${r.ago}</small></span></button>`).join('')}</div></section>`}
+
+function sessionScreen(){
+  if(FL.loading)return sessionLoading();
+  const s=SESS[0],tabs=FL.sess==='tabs',idle=FL.sess==='idle',out=FL.auth==='out';
+  const nh=noteH(),T12=UO(11,9,12,18);
+  let snaps=s.snaps.map(p=>({...p,tabs:6}));
+  if(tabs)snaps=snaps.map(p=>p.t<T12?{...p,c:p.c-FRAG,tabs:5}:p);
+  const pts=snaps.map(p=>({t:p.t,v:p.c/rateAt(p.t),r:rateAt(p.t)}));
+  const a=snaps[0],b=snaps[snaps.length-1],hrs=(b.t-a.t)/3600000;
+  const d0=r1(a.c/rateAt(a.t)),d1=r1(b.c/rateAt(b.t)),gain=r1(d1-d0),perH=gain/hrs,perHC=(b.c-a.c)/hrs;
+  const warn=tabs;
+  const x0=s.t0-8*60000,x1=s.t1+20*60000;const xt=[];for(let t=Math.ceil(x0/1200000)*1200000;t<=x1;t+=1200000)xt.push({t,l:hm(t)});
+  const heroH=216,lowH=AVAIL-nh-heroH-24-(warn?56:0);
+  const rows=nh||warn?4:5;
+  const title=idle?'Session':'Session 3';
+  const sub=idle?'No Session running. Start one to measure earnings per hour.':`Running since ${hm(s.t0)} in Allflame. Snapshot every 10 minutes, next one at 12:58.`;
+  const acts=idle?`<button class="btn primary" data-act="start">Start Session</button>`
+   :`<button class="btn" ${out?'disabled':''} data-act="snap">Take Snapshot</button><button class="btn primary" data-act="stop">Stop Session</button>`;
+  const hero=idle?`<section class="card hero" style="height:${heroH}px"><div class="hl"><div class="lab">Earnings per hour</div><div class="hero-n off">\u2014<small>div/h</small></div><div class="lab">Session 2 earned ${sgn(SESS[1].perH,SESS[1].perH.toFixed(1))} div/h over ${dur(SESS[1].hours)} on Nov 6.</div></div>
+    <div class="hr"><div class="stat"><div><div>Elapsed</div></div><div class="v muted">\u2014</div></div>
+     <div class="stat"><div><div>Net worth change</div></div><div class="v muted">\u2014</div></div>
+     <div class="stat"><div><div>Last Snapshot</div><div class="s2">12:48 today, 7 min ago</div></div><div class="v">${dv(TOTAL)}<small>div</small></div></div></div></section>`
+  :`<section class="card hero" style="height:${heroH}px"><div class="hl"><div class="lab">Earnings per hour</div>
+    ${warn?`<div class="hero-n off">\u2014<small>div/h</small></div><div class="lab">Withheld: the tabs counted changed during this Session. See the note below.</div>`
+    :`<div class="hero-n">${sgn(perH,Math.abs(perH).toFixed(1))}<small>div/h</small></div><div class="lab">${n0(perHC)} chaos per hour, measured ${hm(a.t)} to ${hm(b.t)}</div>`}</div>
+    <div class="hr"><div class="stat"><div><div>Elapsed</div><div class="s2">Started ${hm(s.t0)}</div></div><div class="v">${dur((NOW-s.t0)/3600000)}</div></div>
+     <div class="stat"><div><div>Net worth change</div><div class="s2">${warn?'Not comparable':`Since Session began at ${hm(a.t)}`}</div></div><div class="v">${warn?'<span class="muted">\u2014</span>':`${sgn(gain,Math.abs(gain).toFixed(1))}<small>div</small>`}</div></div>
+     <div class="stat"><div><div>Last Snapshot</div><div class="s2">${hm(b.t)}, 7 min ago \u00b7 next 12:58</div></div><div class="v">${dv(b.c,rateAt(b.t))}<small>div</small></div></div></div></section>`;
+  const chartH=lowH-48-40-28;
+  const idleChart=`<div style="flex:1;position:relative;display:flex;align-items:flex-end"><svg width="712" height="${chartH}" viewBox="0 0 712 ${chartH}" aria-hidden="true"><g stroke="#242427">${[0,1,2,3].map(i=>`<line x1="48" x2="640" y1="${24+i*((chartH-52)/3)}" y2="${24+i*((chartH-52)/3)}"/>`).join('')}</g><line x1="48" x2="640" y1="${chartH-28}" y2="${chartH-28}" stroke="#3a3a3e"/></svg><div class="dashed" style="position:absolute;left:68px;right:100px;top:${Math.round(chartH/2-24)}px">The chart fills in as Snapshots arrive, one every 10 minutes.</div></div>`;
+  return `<div class="trow"><div><h1>${title}</h1><div class="sub">${sub}</div></div><div class="acts">${acts}</div></div>
+   ${noteBar()}${hero}
+   ${warn?`<div class="note" style="margin:16px 0 0"><span>The first Snapshot covers 5 tabs and the latest covers 6. Fragments &amp; Fossils joined at ${hm(T12)} (${n0(FRAG)} chaos), so that jump isn't income.</span><span class="acts"><button class="tbtn" style="white-space:nowrap" data-act="restart">Start a new Session</button></span></div>`:''}
+   <div class="row2" style="height:${lowH}px;margin-top:24px">
+    <section class="card" aria-label="Net worth this Session"><div class="ch"><span class="ct">Net worth this Session</span>${idle?'<span class="lab">Waiting for the first Snapshot</span>':`<span class="lab"><b style="color:var(--text);font-weight:600">${d1.toFixed(1)} div</b> at ${hm(b.t)}</span>`}</div>
+     ${idle?idleChart:`<div style="flex:1;display:flex;align-items:flex-end">${chart({id:'ss',label:'Net worth in divine during the Session',w:712,h:chartH,pts,x0,x1,xt,marks:pts,hlines:warn?[]:[{v:a.c/rateAt(a.t),l:`Session began ${hm(a.t)}, ${d0.toFixed(1)} div`}],vlines:warn?[{t:T12,l:'Fragments & Fossils added'}]:[],top:20})}</div>`}
+     <div class="lab" style="font-size:var(--fs-small);margin-top:8px">${idle?'':'Each tick on the baseline is a Snapshot.'}</div></section>
+    ${recentCard(rows)}</div>`}
+
+function sessionLoading(){
+  const bar=(w,h)=>`<span class="sk" style="width:${w}px;height:${h}px"></span>`;
+  return `<div class="trow"><div><h1>Session</h1><div class="sub">Fetching prices and your last Snapshot.</div></div><div class="acts"><button class="btn" disabled>Take Snapshot</button><button class="btn" disabled>Stop Session</button></div></div>
+   <section class="card hero" style="height:216px"><div class="hl"><div class="lab">Earnings per hour</div><div>${bar(260,72)}</div><div>${bar(300,14)}</div></div>
+    <div class="hr">${[0,1,2].map(()=>`<div class="stat"><div>${bar(90,13)}</div>${bar(80,20)}</div>`).join('')}</div></section>
+   <div class="row2" style="height:${AVAIL-216-24}px;margin-top:24px">
+    <section class="card"><div class="ch"><span class="ct">Net worth this Session</span></div><div style="flex:1;display:flex;align-items:flex-end"><svg width="712" height="264" viewBox="0 0 712 264" aria-hidden="true">${[0,1,2,3].map(i=>`<line x1="48" x2="640" y1="${24+i*60}" y2="${24+i*60}" stroke="${i===3?'#3a3a3e':'#242427'}"/>`).join('')}<polyline fill="none" stroke="#e4c76b" stroke-opacity=".22" stroke-width="3" points="48,200 150,170 250,150 350,120 450,100 550,70 640,40"/></svg></div></section>
+    <section class="card tight"><div class="ch" style="margin-bottom:8px"><span class="ct">Recent Price Checks</span></div>${[0,1,2,3,4].map(()=>`<div style="height:50px;display:flex;justify-content:space-between;align-items:center;padding:0 14px"><div>${bar(130,13)}<div style="margin-top:8px">${bar(90,10)}</div></div>${bar(50,13)}</div>`).join('')}</section></div>`}
+
+/* ======================= Portfolio ======================= */
+function bandsFor(){return SESS.map(s=>({t0:s.t0,t1:s.t1,l:s.name}))}
+function portfolio(){
+  const range=FL.range,now=HIST[HIST.length-1],nh=noteH();
+  const x0=range==='7d'?UO(11,2,12,0):UO(10,27,0,0),x1=UO(11,9,13,0);
+  const pts=HIST.filter(p=>p.t>=x0).map(p=>({t:p.t,v:p.d,r:p.r}));
+  const ticks=range==='7d'?[2,3,4,5,6,7,8,9].map(d=>({t:UO(11,d,0,0),l:dm(UO(11,d,0,0))})):xdays(x0,x1,3);
+  const H=AVAIL-nh,top=Math.max(...TABS.map(t=>t.total)),stale=FL.relay==='stale';
+  const s=SESS[0];
+  return `<div class="trow"><div><h1>Portfolio</h1><div class="sub">${stale?`Valued with prices from ${hm(RELAY_STALE)}.`:`<b>${sgn(s.gainD,s.gainD.toFixed(1))} div</b> since Session 3 began at ${hm(s.t0)} today.`} Last Snapshot ${hm(now.t)}, ${TABS.length+1} tabs.</div></div>
+   <div class="acts">${FL.auth==='out'?'<button class="btn primary" data-go="signin">Sign in with GGG</button>':`<button class="btn primary" title="Take a Snapshot now" data-act="snap">Take Snapshot</button>`}</div></div>
+   ${noteBar()}
+   <div class="row2" style="height:${H}px">
+    <section class="card" aria-label="Net worth over time"><div class="ch" style="align-items:flex-start;margin-bottom:12px"><div>
+       <div class="lab">Net worth in Allflame</div>
+       <div class="lead">${dv(now.c)}<small>div</small></div>
+       <div class="lab" style="margin-top:2px">${n0(now.c)} chaos at ${RATE} per divine</div></div>
+      <div class="seg" role="group" aria-label="Range"><button aria-pressed="${range==='7d'}" data-range="7d">7 days</button><button aria-pressed="${range==='league'}" data-range="league">League</button></div></div>
+      <div style="flex:1;display:flex;align-items:flex-end">${chart({id:'pf',label:'Net worth in divine over time',w:712,h:H-48-96,pts,x0,x1,bands:bandsFor(),xt:ticks})}</div></section>
+    <section class="card tight" style="padding-top:24px"><div class="ch" style="margin-bottom:8px"><span class="ct">Positions</span><span class="lab">by stash tab</span></div>
+      <div class="list" style="flex:1" role="list">${TABS_BY.map(t=>`<button class="li" style="height:${nh?52:60}px" data-pos="${t.id}" role="listitem"><span class="nm"><span>${t.name}</span><span class="bar"><i class="${t.total===top?'top':''}" style="width:${t.total/top*100}%"></i></span></span><span class="vv"><span>${n0(t.total)} c</span></span></button>`).join('')}
+       <button class="li" style="height:44px;color:var(--muted)" data-pos="unp"><span class="nm"><span>Unpriced</span></span><span class="vv"><span>${UNP.length} items</span></span></button></div>
+      <div style="padding:10px 14px;border-top:1px solid var(--rule);display:flex;justify-content:space-between"><span class="muted">Priced total</span><span style="font-weight:600">${n0(TOTAL)} c</span></div>
+      <div style="padding-top:8px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;align-items:center"><button class="tbtn" data-go="holdings">Open Holdings</button>${kbd('3')}</div></section>
+   </div>`}
+
+/* ======================= Holdings ======================= */
+function holdings(){
+  const nh=noteH(),H=AVAIL-nh,hv=FL.hv,sel=TABS.find(t=>t.id===FL.hold)||TABS_BY[0];
+  const snap=HIST[HIST.length-1];
+  const seg=`<div class="seg" role="group" aria-label="Breakdown"><button aria-pressed="${hv==='tab'}" data-hv="tab">By tab</button><button aria-pressed="${hv==='item'}" data-hv="item">By item</button><button aria-pressed="${hv==='unp'}" data-hv="unp">Unpriced ${UNP.length}</button></div>`;
+  const head=`<div class="trow"><div><h1>Holdings</h1><div class="sub">Snapshot of ${hm(snap.t)} today. ${ALL.length} priced items in ${TABS.length} tabs, ${UNP.length} unpriced.</div></div>
+    <div class="acts">${seg}<label class="lab" style="display:flex;align-items:center;gap:10px;margin-left:12px">Snapshot<select aria-label="Snapshot"><option>${hm(snap.t)} today</option><option>12:38 today</option><option>12:28 today</option><option>12:18 today</option></select></label></div></div>${noteBar()}`;
+  const tfoot=(span,c)=>`<tfoot><tr><td colspan="${span}">Priced total</td><td class="n muted" style="font-weight:400">${dv(c)} div</td><td class="n">${n0(c)}</td></tr></tfoot>`;
+  if(hv==='unp')return head+`<section class="card" style="height:${H}px;padding:24px 24px 0"><div class="ch"><span class="ct">Unpriced</span><span class="lab">${UNP.length} items, counted as zero</span></div><div class="scroll" style="flex:1;margin:0 -8px"><table class="tbl"><thead><tr><th>Item</th><th>Base type</th><th class="n">Item level</th><th class="n">Value</th></tr></thead><tbody>${UNP.map(r=>`<tr><td>${r.name}</td><td class="muted">${r.base}</td><td class="n muted">${r.ilvl}</td><td class="n dash">\u2014</td></tr>`).join('')}</tbody></table></div></section>`;
+  if(hv==='item')return head+`<section class="card" style="height:${H}px;padding:24px 24px 0"><div class="ch"><span class="ct">All priced items</span><span class="lab">${ALL.length} items, largest first</span></div><div class="scroll" style="flex:1;margin:0 -8px"><table class="tbl"><thead><tr><th>Item</th><th>Tab</th><th class="n">Quantity</th><th class="n">Each (chaos)</th><th class="n">Value (chaos)</th></tr></thead><tbody>${ALL.map(r=>`<tr><td>${r.name}</td><td class="muted">${r.tab}</td><td class="n">${n0(r.qty)}</td><td class="n muted">${pc(r.each)}</td><td class="n">${n0(r.value)}</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="3">Priced total</td><td class="n muted" style="font-weight:400">${dv(TOTAL)} div</td><td class="n">${n0(TOTAL)}</td></tr></tfoot></table></div></section>`;
+  const left=TABS_BY.map(t=>`<button class="li" style="height:60px" role="option" aria-selected="${t.id===sel.id}" data-hold="${t.id}"><span class="nm"><span>${t.name}</span><small>${t.rows.length} items</small></span><span class="vv"><span>${n0(t.total)} c</span></span></button>`).join('');
+  return head+`<div class="rowL" style="height:${H}px">
+    <section class="card tight" style="padding-top:24px"><div class="ch" style="margin-bottom:8px"><span class="ct">Tabs</span><span class="lab">${TABS.length} priced</span></div><div class="list" style="flex:1" role="listbox" aria-label="Stash tabs">${left}</div>
+     <div style="padding:10px 14px;border-top:1px solid var(--rule);display:flex;justify-content:space-between"><span class="muted">All tabs</span><span style="font-weight:600">${n0(TOTAL)} c</span></div></section>
+    <section class="card" style="padding:24px 24px 0"><div class="ch"><span class="ct">${sel.name}</span><span class="lab">${sel.rows.length} items</span></div><div class="scroll" style="flex:1;margin:0 -8px"><table class="tbl"><thead><tr><th>Item</th><th class="n">Quantity</th><th class="n">Each (chaos)</th><th class="n">Value (chaos)</th></tr></thead><tbody>${sel.rows.map(r=>`<tr><td>${r.name}</td><td class="n">${n0(r.qty)}</td><td class="n muted">${pc(r.each)}</td><td class="n">${n0(r.value)}</td></tr>`).join('')}</tbody>${tfoot(2,sel.total)}</table></div></section></div>`}
+
+/* ======================= Settings, setup, first run ======================= */
+function settings(){
+  const out=FL.auth==='out',st=FL.relay==='stale';
+  const rowK=(t,d,keys)=>`<div class="fr"><div><div class="t">${t}</div><div class="d">${d}</div></div><button class="rec" data-rec data-k="${keys.join('+')}" aria-label="Change ${t} shortcut">${kbd(...keys)}<span class="muted" style="font-size:12px">Change</span></button></div>`;
+  return `<div class="trow"><div><h1>Settings</h1><div class="sub">Changes save as you make them.</div></div><div class="acts"><span class="lab" style="font-size:12px">Saved</span></div></div>
+   <div style="padding-bottom:8px">
+   <section class="srow"><div><h2>Hotkeys</h2><p>Pressed over the game. The card closes when you click the game or move the mouse away.</p></div><div class="card" style="padding:8px 24px">${rowK('Price Check','Copies the item under the cursor and values it',['Ctrl','D'])}${rowK('Screen Price Check','Reads gem names at the Divine Font',['Ctrl','Alt','D'])}</div></section>
+   <section class="srow"><div><h2>Snapshots</h2><p>During a Session, Lootwise values your chosen stash tabs on a timer.</p></div><div class="card" style="padding:8px 24px"><div class="fr"><div><div class="t">Automatic Snapshot every</div><div class="d">Used while a Session is running</div></div><select aria-label="Snapshot interval"><option>10 minutes</option><option>5 minutes</option><option>15 minutes</option><option>30 minutes</option></select></div>
+     <div class="fr"><div><div class="t">Stash tabs counted</div><div class="d">6 of 7 tabs, all except Remove-only</div></div><button class="tbtn" data-go="setup">Choose tabs</button></div></div></section>
+   <section class="srow"><div><h2>Prices</h2><p>Public price data comes from the Lootwise relay, never from your machine to poe.ninja.</p></div><div class="card" style="padding:8px 24px">
+     <div class="fr"><div><div class="t">League</div><div class="d">Values are never compared across Leagues</div></div><select aria-label="League"><option>Allflame</option><option>Hardcore Allflame</option><option>Standard</option></select></div>
+     <div class="fr"><div><div class="t">Relay ${st?'<span class="pill neg" style="margin-left:8px">Unreachable</span>':'<span class="pill pos" style="margin-left:8px">Fresh</span>'}</div><div class="d">${st?`Last good update ${hm(RELAY_STALE)}, 3 h 14 min ago. Using cached prices.`:`Updated ${hm(RELAY_OK)}, 3 min ago. Refreshes every 15 minutes at most.`}</div></div><button class="btn sm">Refresh now</button></div></div></section>
+   <section class="srow"><div><h2>Account</h2><p>Needed only for wealth tracking. Price Check works signed out.</p></div><div class="card" style="padding:8px 24px"><div class="fr"><div><div class="t">${out?'Not signed in':'Wanderer#1042'}</div><div class="d">${out?'Your sign-in expired at 12:50':'Signed in with GGG, 7 h 12 min left. Sign-in lasts 10 hours.'}</div></div>${out?'<button class="btn sm primary" data-go="signin">Sign in with GGG</button>':'<button class="btn sm">Sign out</button>'}</div></div></section>
+   <section class="srow"><div><h2>Plugins</h2><p>Third-party code that adds price sources or item details.</p></div><div class="card" style="padding:16px 24px"><div class="dashed">No Plugins installed. Plugin support arrives in a later release.</div></div></section>
+   <section class="srow"><div><h2>About</h2><p>Lootwise 0.1.0 for Path of Exile 1. It never updates itself.</p></div><div class="card" style="padding:8px 24px"><div class="fr"><div><div class="t">Version 0.2.0 is available</div><div class="d">Release notes and download on GitHub</div></div><a class="btn sm" href="#about">Download ${I.ext}</a></div></div></section>
+   </div>`}
+
+const TABL=[['cur','Currency','Currency tab','7 stacks'],['sca','Scarabs','Scarab tab','4 stacks'],['fra','Fragments & Fossils','Fragment tab','5 stacks'],['car','Cards','Divination tab','2 stacks'],['uni','Uniques','Normal tab','4 items'],['dump','Dump','Normal tab','47 items'],['old','Old Currency','Currency tab','']];
+function setup(){
+  const changed=SESS[0].running&&FL.sess!=='idle'&&['cur','sca','fra','car','uni','dump','old'].some(k=>FL.tabsOn[k]!==({cur:1,sca:1,fra:1,car:1,uni:1,dump:1,old:0})[k]);
+  const n=TABL.filter(t=>FL.tabsOn[t[0]]).length;
+  return `<div class="trow"><div><h1>Set up wealth tracking</h1><div class="sub">Signed in as <b>Wanderer#1042</b>. Your sign-in lasts 10 hours.</div></div><div class="acts"><button class="btn primary" data-go="session">Finish setup</button></div></div>
+   ${changed?`<div class="note"><span>Session 3 is running. Changing tabs now means earnings per hour will be withheld until you start a new Session.</span></div>`:''}
+   <div class="rowL" style="grid-template-columns:1fr 1fr;height:${AVAIL-(changed?56:0)}px">
+    <section class="card"><div class="ch"><span class="ct">League</span><span class="lab">Step 2 of 3</span></div>
+      ${[['Allflame','Current challenge League',1],['Hardcore Allflame','',0],['Standard','',0],['Hardcore','',0]].map(l=>`<div class="opt" style="min-height:72px"><span class="rd ${l[2]?'on':''}"></span><div class="g">${l[0]}</div>${l[1]?`<span class="pill">${l[1]}</span>`:''}</div>`).join('')}
+      <div class="lab" style="margin-top:auto;padding-top:16px;border-top:1px solid var(--rule)">Prices, Snapshots and Sessions belong to one League and are never mixed.</div></section>
+    <section class="card"><div class="ch"><span class="ct">Stash tabs</span><span class="lab">Step 3 of 3 \u00b7 ${n} of 7 selected</span></div>
+      <div class="scroll" style="flex:1">${TABL.map(t=>`<button class="opt" style="min-height:52px" data-tab="${t[0]}" role="checkbox" aria-checked="${!!FL.tabsOn[t[0]]}"><span class="cb ${FL.tabsOn[t[0]]?'on':''}"></span><div class="g">${t[1]}<div class="d">${t[2]}</div></div>${t[3]?`<span class="muted n">${t[3]}</span>`:'<span class="pill warn">Remove-only</span>'}</button>`).join('')}</div>
+      <div class="lab" style="padding-top:12px;border-top:1px solid var(--rule)">Every tab except Remove-only starts selected. Changing tabs during a Session withholds earnings per hour.</div></section></div>`}
+
+function first(){
+  return `<div class="trow"><div><h1>Welcome to Lootwise</h1><div class="sub">Price Check already works without an account. Wealth tracking needs three steps.</div></div><div class="acts"><button class="btn primary" data-go="signin">Sign in with GGG</button></div></div>
+   <div class="row2" style="height:${AVAIL}px">
+    <section class="card"><div class="ch"><span class="ct">Try a Price Check</span></div>
+      <div style="display:flex;flex-direction:column;gap:16px;padding-top:8px"><div class="lead">Hover an item in game</div><div style="display:flex;gap:12px;align-items:center" class="lab">Then press ${kbd('Ctrl','D')} and the price appears beside your cursor.</div>
+       <div style="display:flex;gap:12px;align-items:center" class="lab">At the Divine Font, press ${kbd('Ctrl','Alt','D')} to price the gems offered.</div></div>
+      <div class="dashed" style="flex:1;margin:24px 0 16px;display:flex;align-items:center;justify-content:center;text-align:center">Your Price Checks are listed here, newest first, once you have made one.</div>
+      <div class="lab" style="padding-top:12px;border-top:1px solid var(--rule)">Nothing is tracked yet. Net worth appears here after your first Snapshot.</div></section>
+    <section class="card"><div class="ch"><span class="ct">Set up wealth tracking</span><span class="lab">0 of 3</span></div>
+      <div class="prog" style="margin:0 0 8px"><i style="width:0"></i></div>
+      <div class="list" style="flex:1">
+       <div class="opt" style="min-height:76px"><div class="g"><div style="font-weight:500">Sign in with GGG</div><div class="d">In your browser; lasts 10 hours, then asks again</div></div></div>
+       <div class="opt" style="min-height:76px"><div class="g"><div style="font-weight:500">Pick your League</div><div class="d">Defaults to Allflame, the current challenge League</div></div></div>
+       <div class="opt" style="min-height:76px"><div class="g"><div style="font-weight:500">Choose stash tabs</div><div class="d">Every tab except Remove-only is on</div></div></div></div></section></div>`}
+
+function signin(){
+  return `<div class="trow"><div><h1>Sign in with GGG</h1><div class="sub">Only needed for wealth tracking. Price Check works signed out.</div></div><div class="acts"><button class="btn" data-go="first">Cancel</button></div></div>
+   <div class="row2" style="height:${AVAIL}px"><section class="card" style="align-items:center;justify-content:center;gap:20px"><span class="spin" aria-hidden="true"></span><div class="lead" style="font-size:var(--fs-kpi);line-height:28px">Waiting for you in the browser</div>
+    <div class="lab" style="max-width:420px;text-align:center">Approve Lootwise on pathofexile.com, then return here. The sign-in lasts 10 hours, then asks again.</div></section>
+    <section class="card"><div class="ch"><span class="ct">What you approve</span></div>
+     <div class="opt" style="min-height:76px"><div class="g"><div style="font-weight:500">Your account name</div><div class="d">Shown in the top bar</div></div></div>
+     <div class="opt" style="min-height:76px"><div class="g"><div style="font-weight:500">Read your stash tabs</div><div class="d">To value them in a Snapshot</div></div></div>
+     <div class="opt" style="min-height:76px"><div class="g"><div style="font-weight:500">Nothing else</div><div class="d">Lootwise never sees your password and cannot change your stash</div></div></div></section></div>`}
+
+/* ======================= Ctrl K palette ======================= */
+const CMDS=[
+ {g:'Go to',l:'Session',k:['1'],run:()=>go('session')},{g:'Go to',l:'Portfolio',k:['2'],run:()=>go('portfolio')},{g:'Go to',l:'Holdings',k:['3'],run:()=>go('holdings')},{g:'Go to',l:'Settings',k:[],run:()=>go('settings')},
+ {g:'Do',l:'Take Snapshot',k:[],run:()=>go('session')},{g:'Do',l:'Stop Session',k:[],run:()=>go('session')},
+ {g:'Do',l:'Choose stash tabs',k:[],run:()=>go('setup')},{g:'Do',l:'Sign in with GGG',k:[],run:()=>go('signin')},
+ {g:'Open again',l:'Recent Price Check: '+RECENT[0].name,k:[],run:()=>openSurface(RECENT[0].to)},{g:'Open again',l:'Recent Price Check: Havoc Crest',k:[],run:()=>openSurface(RECENT[1].to)},
+];
+const pfilter=()=>CMDS.filter(c=>(c.g+' '+c.l).toLowerCase().includes(FL.pq.toLowerCase()));
+function palList(){const f=pfilter();FL.pi=Math.min(FL.pi,Math.max(f.length-1,0));let g='',h='';
+  f.forEach((c,i)=>{if(c.g!==g){g=c.g;h+=`<div class="gl">${g}</div>`}h+=`<button class="pi" role="option" aria-selected="${i===FL.pi}" data-pi="${i}"><span>${c.l}</span>${c.k.length?kbd(...c.k):''}</button>`});
+  return h||`<div class="gl" style="padding:20px 16px">Nothing matches \u201c${FL.pq}\u201d</div>`}
+function palette(){return `<div class="pal" role="dialog" aria-label="Command palette"><div class="in">${I.search}<input id="pq" placeholder="Type a command" autocomplete="off" aria-label="Command" value="${FL.pq}"></div><div id="pl" style="max-height:524px;overflow:auto">${palList()}</div><div class="pf"><span>Up and down to move, Enter to run</span><span>Esc closes</span></div></div>`}
+
+/* ======================= routes ======================= */
+const ROUTES={session:sessionScreen,portfolio,holdings,settings,setup,first,signin};
+function win(route){
+  const hi=route==='setup'||route==='first'||route==='signin'?'settings':route;
+  return `<div class="win ${FL.pal?'pal-open':''}">${rail(route==='first'?'session':hi)}${topbar()}<main class="content" id="content">${ROUTES[route]()}</main>${statusbar()}${FL.pal?palette():''}</div>`}
+
+/* ======================= the game stand-in and the overlay cards ======================= */
+const cursor=(x,y)=>`<svg class="cur" style="left:${x}px;top:${y}px" viewBox="0 0 20 26" aria-hidden="true"><path d="M1 1v19l5-4.5 3.5 8 3-1.4L9.5 14H17z" fill="#fff" stroke="#0b0b0c" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+const R_STASH=[286,230,84,128], R_EQUIP=[1140,100,64,128], R_FONT=[200,80,640,600];
+function stash(hover){
+  const items=[[0,0,1,1],[1,0,1,1],[2,0,1,1],[3,0,1,1],[4,0,1,1],[0,1,1,1],[1,1,1,1],[2,1,2,2],[4,1,1,1],[0,2,1,1],[5,3,2,3],[8,0,2,2],[10,0,1,1],[8,3,1,1],[9,3,1,1],[10,3,1,1],[2,4,1,1],[3,4,1,1],[0,5,2,3],[9,5,2,3],[3,6,2,2],[7,7,1,1],[8,7,1,1],[6,8,1,1],[5,9,2,2],[0,9,1,1],[1,9,1,1]];
+  let s=`<div class="panel" style="left:48px;top:56px;width:560px;height:608px"></div><div class="pt" style="left:64px;top:68px">Stash</div><div class="cells" style="left:64px;top:96px;width:528px;height:528px"></div>`;
+  items.forEach((i,k)=>{const h=hover==='stash'&&i[0]===5&&i[1]===3;s+=`<div class="it ${k%3?'':'b'} ${h?'hov':''}" style="left:${64+i[0]*44+2}px;top:${96+i[1]*44+2}px;width:${i[2]*44-4}px;height:${i[3]*44-4}px"></div>`});
+  s+=`<div class="panel" style="left:664px;top:56px;width:568px;height:300px"></div><div class="pt" style="left:680px;top:68px">Equipment</div>`;
+  [[868,100,64,64],[960,100,64,64],[1052,100,64,64],[868,190,64,64],[960,190,64,128],[1052,190,64,64],[700,100,128,132],[700,250,64,64],[772,250,64,64]].forEach(r=>s+=`<div class="slot" style="left:${r[0]}px;top:${r[1]}px;width:${r[2]}px;height:${r[3]}px"></div>`);
+  s+=hover==='equip'?`<div class="it hov" style="left:1140px;top:100px;width:64px;height:128px"></div>`:`<div class="slot" style="left:1140px;top:100px;width:64px;height:128px"></div>`;
+  s+=`<div class="panel" style="left:664px;top:384px;width:568px;height:280px"></div><div class="pt" style="left:680px;top:396px">Inventory</div><div class="cells" style="left:680px;top:424px;width:528px;height:220px"></div>`;
+  [[0,0,2,3],[3,0,1,1],[4,0,1,1],[6,1,1,2],[9,0,1,1],[10,2,2,2],[5,3,2,1],[8,3,1,1]].forEach(i=>s+=`<div class="it" style="left:${680+i[0]*44+2}px;top:${424+i[1]*44+2}px;width:${i[2]*44-4}px;height:${i[3]*44-4}px"></div>`);
+  return s}
+const trendSvg=(sp,priceC)=>{
+  const f=priceC/(1+sp[sp.length-1]/100),v=sp.map(x=>f*(1+x/100)/RATE),mn=Math.min(...v),mx=Math.max(...v),W=288,H=44;
+  const pts=v.map((y,i)=>`${(i/(v.length-1)*(W-2)+1).toFixed(1)},${(H-4-(y-mn)/(mx-mn||1)*(H-10)).toFixed(1)}`).join(' ');
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Price over the last 7 days"><line x1="0" x2="${W}" y1="${H-1}" y2="${H-1}" stroke="#3a3a3e"/><polyline fill="none" stroke="#e4c76b" stroke-width="2" stroke-linejoin="round" points="${pts}"/></svg>
+   <div class="trh" style="margin-top:4px"><span>${v[0].toFixed(2)} div</span><span>${v[v.length-1].toFixed(2)} div</span></div>`};
+const HINT='<div class="hint">Click the game or move away to close</div>';
+const qrow=(a,b)=>`<div class="lg"><span>${a}</span><span>${b}</span></div>`;
+const qname=(n,s,why)=>`<div class="qn"><h1>${n}</h1><span>${s}</span>${why?`<span class="why">${why}</span>`:''}</div>`;
+const ninja=`<div class="qf"><a href="#ninja">poe.ninja ${I.ext}</a></div>`;
+function card(kind){
+  const g=Q.garb,a=Q.atz;
+  if(kind==='commodity')
+   return `<div class="qc" data-r="${R_STASH}"><div class="qp"><span class="big">${(g.c/RATE).toFixed(2)}<small>div</small></span><span class="alt">${n0(g.c)} c</span></div>
+    ${qname(g.name,g.base+' \u00b7 Unique \u00b7 Allflame')}
+    <div style="margin:4px 0">${qrow('Listings',g.n)}${qrow('Price age','4 min')}</div>
+    <div class="trh" style="margin-top:2px"><span>Last 7 days</span><b>${sgn(g.tc,g.tc.toFixed(1)+'%')}</b></div>${trendSvg(g.sp,g.c)}
+    ${ninja}${HINT}</div>`;
+  if(kind==='low')
+   return `<div class="qc" data-r="${R_STASH}"><div class="qp"><span class="big"><span class="muted" style="font-size:24px;font-weight:400;margin-right:6px">~</span>${(a.c/RATE).toFixed(2)}<small>div</small></span><span class="alt">${n0(a.c)} c</span></div>
+    ${qname(a.name,a.base+' \u00b7 Unique, '+a.variant+' \u00b7 Allflame',null)}
+    <div style="margin:4px 0">${qrow('Listings',a.n)}${qrow('Confidence','<span class="pill warn">Low</span>')}${qrow('Price age','3 h 14 min')}</div>
+    <div class="lab" style="font-size:var(--fs-small);color:var(--pill-warning-ink)">Only ${a.n} listings, and the relay data is 3 h 14 min old.</div>
+    <div class="trh" style="margin-top:10px"><span>Last 7 days</span><b class="muted" style="font-weight:400">\u2014</b></div><div class="dashed" style="font-size:var(--fs-small);padding:8px 12px;margin-top:6px">Too few sales for a 7-day line.</div>
+    ${ninja}${HINT}</div>`;
+  if(kind==='rare'||kind==='limit'){const lim=kind==='limit';
+   const f=[['Base type','Hubris Circlet','',1],['Item level','84','84',1],['Total life','92','83',1],['Elemental resistance','110','99',1],['Energy shield','70','63',0]];
+   return `<div class="qc" data-r="${R_EQUIP}">
+    ${lim?`<div style="padding:2px 0 12px"><div class="lab">Live Search is rate limited</div><div class="lead" style="margin-top:2px">Search again in <span id="cd">8</span> s</div><div class="prog" style="margin-top:10px"><i id="cdb" style="width:67%"></i></div><div class="trh" style="margin-top:0"><span>0 s</span><span>12 s</span></div></div>`
+    :`<div class="qp"><span class="big">6.50<small>div</small></span><span class="alt">3,266 c</span></div>`}
+    ${qname('Havoc Crest','Rare \u00b7 Hubris Circlet \u00b7 item level 84')}
+    ${lim?'':`<div class="lab" style="font-size:var(--fs-small);margin:8px 0 2px">Live Search median of the 10 cheapest of 23 listings</div>`}
+    <div class="fl h" style="margin-top:6px"><span></span><span>Filter</span><span class="r">Rolled</span><span class="r">Minimum</span></div>
+    ${f.map(r=>`<div class="fl ${r[3]?'':'off'}"><span class="cb ${r[3]?'on':''}"></span><span class="lbl">${r[0]}</span>${r[2]?`<span class="r muted">${r[1]}</span><input class="inp" value="${r[2]}" aria-label="${r[0]} minimum">`:`<span class="r muted" style="grid-column:span 2">${r[1]}</span>`}</div>`).join('')}
+    <div class="lab" style="font-size:var(--fs-small);margin-top:4px">Minimums start at 90% of the rolled values. Edit any of them.</div>
+    <div class="qf" style="margin-top:12px"><button class="btn sm primary">Open on trade site ${I.ext}</button></div>${HINT}</div>`}
+  if(kind==='none')return `<div class="qc" data-r="${R_STASH}">${qname('Cinched Boots','Magic Sorcerer Boots \u00b7 Allflame')}
+    <div style="padding:14px 0 4px"><div class="ct">Not a Commodity Item</div><div class="lab" style="margin-top:6px">A magic item's value isn't set by its name, so there is no market price to look up. Rare items get a Live Search instead.</div></div>${HINT}</div>`;
+  if(kind==='nolg')return `<div class="qc" data-r="${R_STASH}">${qname(g.name,g.base+' \u00b7 Unique \u00b7 Ruthless Allflame')}
+    <div style="padding:14px 0 14px"><div class="ct">Prices unavailable for this League</div><div class="lab" style="margin-top:6px">The relay doesn't publish prices for Ruthless Allflame yet. Lootwise won't show another League's prices instead.</div></div>
+    <div class="qf" style="margin-top:0"><button class="btn sm">Switch to Allflame</button></div>${HINT}</div>`;
+  if(kind==='font'){
+   const G=P.gems,pick=n=>G.find(x=>x.name===n);const o=[pick('Storm Burst of Repulsion'),pick('Dual Strike of Ambidexterity'),pick('Frostblink of Wintry Blast')].sort((a,b)=>b.c-a.c);
+   return `<div class="qc" data-r="${R_FONT}"><div style="font-size:var(--fs-small);color:var(--muted);line-height:16px">Best of 4 options at the Divine Font</div>
+    <div class="qp"><span class="big">${(o[0].c/RATE).toFixed(2)}<small>div</small></span><span class="alt">${n0(o[0].c)} c</span></div>
+    <div class="qn" style="padding-bottom:8px"><h1>${o[0].name}</h1><span>20/20c \u00b7 Allflame \u00b7 you offered Ethereal Knives 20/20 corrupted</span></div>
+    <div>${o.map((g,i)=>`<div class="opr ${i===0?'best':''}"><span class="a"><span>${g.name}</span><span>20/20c \u00b7 ${g.n} listings</span></span><span class="b"><span>${(g.c/RATE).toFixed(2)} div</span><span>${n0(g.c)} c</span></span></div>`).join('')}
+    <div class="opr"><span class="a"><span class="muted">Unrecognised</span><span>Read as \u201cGl?cial H?mm?r of\u2026\u201d</span></span><span class="b"><span class="muted">\u2014</span><span>not priced</span></span></div></div>
+    ${HINT}</div>`}
+}
+function fontScene(){
+  let s=`<div class="fontp" style="left:200px;top:80px;width:640px;height:600px"></div><div class="pt" style="left:224px;top:96px;font-size:16px;color:#8a8c92">Divine Font</div>`;
+  const nm=['Storm Burst of Repulsion','Dual Strike of Ambidexterity','Gl\u2022cial H\u2022mm\u2022r of Sh\u2022ttering','Frostblink of Wintry Blast'];
+  [0,1,2,3].forEach(i=>s+=`<div class="opt-g" style="left:224px;top:${144+i*112}px;width:592px;height:96px"><span style="font-size:16px;color:#bdbdc0">${nm[i]}</span><span style="font-size:12px;color:#8a8c92;margin-top:4px">Skill Gem \u00b7 Level 20 \u00b7 Quality 20% \u00b7 Corrupted</span></div>`);
+  return s+cursor(780,300)}
+function game(kind){
+  const hud=`<div class="pt" style="right:48px;top:24px;text-align:right">Allflame \u00b7 Level 94 \u00b7 Hideout</div>`;
+  const eq=kind==='rare'||kind==='limit';
+  const scene=kind==='font'?fontScene():stash(eq?'equip':'stash')+(eq?cursor(1180,130):cursor(352,250));
+  return `<div class="game" data-game>${hud}${scene}${card(kind)}</div>`}
+/* the card sits beside the hovered item: to its right, flipped left when it would pass the screen edge */
+function placeCard(){const q=stage.querySelector('.qc');if(!q)return;const r=q.dataset.r.split(',').map(Number),w=q.offsetWidth,h=q.offsetHeight;
+  let x=r[0]+r[2]+20;if(x+w>1280-16)x=r[0]-20-w;const y=Math.min(Math.max(r[1],16),800-16-h);q.style.left=x+'px';q.style.top=y+'px'}
+
+/* ======================= surfaces and switching ======================= */
+const S=[
+ {id:'session',g:'Window',l:'Session',r:'session'},
+ {id:'session-idle',g:'Window',l:'No Session running',r:'session',v:{sess:'idle'}},
+ {id:'portfolio',g:'Window',l:'Portfolio',r:'portfolio'},
+ {id:'holdings',g:'Window',l:'Holdings',r:'holdings'},
+ {id:'holdings-items',g:'Window',l:'By item',r:'holdings',v:{hv:'item'}},
+ {id:'unpriced',g:'Window',l:'Unpriced',r:'holdings',v:{hv:'unp'}},
+ {id:'palette',g:'Window',l:'Ctrl K',r:'session',v:{pal:true}},
+ {id:'check',g:'Price Check',l:'Commodity Item',card:'commodity'},
+ {id:'check-low',g:'Price Check',l:'Low confidence',card:'low'},
+ {id:'check-rare',g:'Price Check',l:'Rare, Live Search',card:'rare'},
+ {id:'check-limit',g:'Price Check',l:'Rate limited',card:'limit'},
+ {id:'check-none',g:'Price Check',l:'Not a Commodity Item',card:'none'},
+ {id:'check-nolg',g:'Price Check',l:'No prices for League',card:'nolg'},
+ {id:'font',g:'Screen Price Check',l:'Divine Font',card:'font'},
+ {id:'first',g:'Setup',l:'First run',r:'first',v:{auth:'none'}},
+ {id:'signin',g:'Setup',l:'GGG sign-in',r:'signin',v:{auth:'none'}},
+ {id:'setup',g:'Setup',l:'League and tabs',r:'setup'},
+ {id:'settings',g:'Setup',l:'Settings',r:'settings'},
+ {id:'signedout',g:'States',l:'Signed out',r:'session',v:{auth:'out'}},
+ {id:'stale',g:'States',l:'Relay stale',r:'session',v:{relay:'stale'}},
+ {id:'loading',g:'States',l:'Loading',r:'session',v:{loading:true}},
+ {id:'session-tabs',g:'States',l:'Tabs changed',r:'session',v:{sess:'tabs'}},
+ {id:'setup-warn',g:'States',l:'Changing tabs',r:'setup',v:{tabsOn:{cur:1,sca:1,fra:0,car:1,uni:1,dump:1,old:0}}},
+];
+const DEF=()=>({auth:'in',relay:'ok',loading:false,sess:'run',hold:'cur',hv:'tab',range:'league',rc:0,pal:false,pq:'',pi:0,tabsOn:{cur:1,sca:1,fra:1,car:1,uni:1,dump:1,old:0}});
+let cur='session',cdTimer=null,back='session';
+const stage=document.getElementById('stage');
+function paint(){
+  const s=S.find(x=>x.id===cur);
+  document.getElementById('sw').querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.id===cur));
+  CH={};clearInterval(cdTimer);
+  stage.innerHTML=s.card?game(s.card):win(s.r);
+  placeCard();
+  if(s.card==='limit'){let t=8;const cd=document.getElementById('cd'),cb=document.getElementById('cdb');cdTimer=setInterval(()=>{t=t<=0?8:t-1;cd.textContent=t;cb.style.width=(t/12*100)+'%'},1000)}
+  const pq=document.getElementById('pq');if(pq){pq.focus();pq.setSelectionRange(pq.value.length,pq.value.length)}
+}
+function show(id,reset=true){const s=S.find(x=>x.id===id);cur=id;if(reset)Object.assign(FL,DEF(),s.v||{});history.replaceState(null,'','#'+id);paint()}
+/* in-window navigation keeps state; destinations land on their home surface */
+function go(route){FL.pal=false;FL.pq='';const hm_={session:'session',portfolio:'portfolio',holdings:'holdings',settings:'settings',setup:'setup',signin:'signin',first:'first'};
+  const s=S.find(x=>x.r===hm_[route]&&!x.v)||S.find(x=>x.r===hm_[route]);cur=s.id;if(s.id!=='signin'&&s.id!=='first')FL.auth=FL.auth==='none'?'in':FL.auth;history.replaceState(null,'','#'+cur);paint()}
+function openSurface(id){back=cur==='palette'?'session':cur;FL.pal=false;cur=id;history.replaceState(null,'','#'+id);paint()}
+const sw=document.getElementById('sw');
+[...new Set(S.map(s=>s.g))].forEach(g=>{const d=document.createElement('div');d.className='sw-g';d.innerHTML=`<span>${g}</span>`+S.filter(s=>s.g===g).map(s=>`<button data-id="${s.id}">${s.l}</button>`).join('');sw.appendChild(d)});
+sw.addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.id)});
+
+stage.addEventListener('click',e=>{
+  const t=e.target;
+  if(t.closest('[data-game]')&&!t.closest('.qc')){back='session';show('session');return}
+  if(FL.pal&&!t.closest('.pal')&&!t.closest('[data-pi]')){FL.pal=false;paint();return}
+  const pi=t.closest('[data-pi]');if(pi){pfilter()[+pi.dataset.pi].run();return}
+  const g=t.closest('[data-go]'),r=t.closest('[data-range]'),p=t.closest('[data-pos]'),h=t.closest('[data-hold]'),hv=t.closest('[data-hv]'),rc=t.closest('[data-rc]'),rec=t.closest('[data-rec]'),tb=t.closest('[data-tab]'),ac=t.closest('[data-act]');
+  if(g)go(g.dataset.go);
+  else if(r){FL.range=r.dataset.range;paint()}
+  else if(p){if(p.dataset.pos==='unp')FL.hv='unp';else{FL.hv='tab';FL.hold=p.dataset.pos}go('holdings')}
+  else if(hv){FL.hv=hv.dataset.hv;paint()}
+  else if(h){FL.hold=h.dataset.hold;paint()}
+  else if(rc){FL.rc=+rc.dataset.rc;openSurface(RECENT[FL.rc].to)}
+  else if(tb){FL.tabsOn[tb.dataset.tab]=FL.tabsOn[tb.dataset.tab]?0:1;paint()}
+  else if(ac){const a=ac.dataset.act;if(a==='start'||a==='restart')FL.sess='run';if(a==='stop')FL.sess='idle';paint()}
+  else if(rec){const on=rec.classList.toggle('on');rec.innerHTML=on?'<span class="muted">Press the new shortcut\u2026</span><span class="muted" style="font-size:12px">Esc cancels</span>':kbd(...rec.dataset.k.split('+'))+'<span class="muted" style="font-size:12px">Change</span>'}
+});
+stage.addEventListener('input',e=>{if(e.target.id==='pq'){FL.pq=e.target.value;FL.pi=0;document.getElementById('pl').innerHTML=palList()}});
+document.addEventListener('keydown',e=>{
+  const s=S.find(x=>x.id===cur);
+  if(e.ctrlKey&&e.key.toLowerCase()==='k'&&s.r){e.preventDefault();FL.pal=!FL.pal;FL.pq='';FL.pi=0;paint();return}
+  if(FL.pal&&s.r){const f=pfilter();
+    if(e.key==='Escape'){FL.pal=false;paint()}
+    else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();FL.pi=Math.min(Math.max(FL.pi+(e.key==='ArrowDown'?1:-1),0),f.length-1);document.getElementById('pl').innerHTML=palList()}
+    else if(e.key==='Enter'&&f[FL.pi]){e.preventDefault();f[FL.pi].run()}
+    return}
+  if(e.target.matches('input,select'))return;
+  const i=S.findIndex(x=>x.id===cur);
+  if(e.key==='ArrowRight'&&!(s.r==='session'&&e.shiftKey)){show(S[(i+1)%S.length].id)}else if(e.key==='ArrowLeft'){show(S[(i+S.length-1)%S.length].id)}
+  else if(s.r&&['1','2','3'].includes(e.key)){go({1:'session',2:'portfolio',3:'holdings'}[e.key])}
+  else if((e.key==='ArrowDown'||e.key==='ArrowUp')&&s.r==='session'){e.preventDefault();FL.rc=Math.min(Math.max(FL.rc+(e.key==='ArrowDown'?1:-1),0),RECENT.length-1);paint()}
+  else if(e.key==='Enter'&&s.r==='session'&&!e.target.closest('button')){openSurface(RECENT[FL.rc].to)}
+});
+function fit(){const f=document.getElementById('fit'),sc=Math.min(1,(window.innerWidth-40)/1280);stage.style.transform=sc<1?`scale(${sc})`:'';f.style.width=sc<1?`${1282*sc}px`:'1282px';f.style.height=(802*sc)+'px'}
+addEventListener('resize',fit);addEventListener('hashchange',()=>{const id=location.hash.slice(1);if(S.find(x=>x.id===id)&&id!==cur)show(id)});
+const h0=location.hash.slice(1);show(S.find(x=>x.id===h0)?h0:'session');fit();
+</script>
+</body>
+</html>

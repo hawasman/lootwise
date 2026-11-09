@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lootwise design 1: one screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ground:#f4f3f1; --surface:#ffffff; --raised:#eceae7; --border:#e4e2de; --rule:#efedea; --control:#cfccc7;
+  --text:#0a0a0a; --muted:#66625d; --accent:#141414; --positive:#247b50; --negative:#c4242a; --warning:#92400e;
+  --hue:#1d5fbf; --grey:#8a8a8a;
+  --pill-warn-bg:#fffbeb; --pill-warn-ink:#92400e; --pill-neutral-bg:#eceae7; --pill-neutral-ink:#3d3d3d;
+  --pill-pos-bg:#dcfae5; --pill-pos-ink:#04250e; --pill-neg-bg:#ffedea; --pill-neg-ink:#831c1e;
+  --radius-card:8px; --radius-control:6px; --gap:16px; --pad:20px; --control-height:32px;
+  --font:"Geist",Inter,system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#dcdad6;color:var(--text);font-family:var(--font);font-size:14px;line-height:20px;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+:focus-visible{outline:2px solid var(--hue);outline-offset:2px}
+
+/* ---------- page frame (outside the app) ---------- */
+.page{max-width:1312px;margin:0 auto;padding:16px 16px 32px}
+.index{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;margin-bottom:12px}
+.index .ttl{font-size:16px;line-height:24px;font-weight:500;margin-right:8px}
+.grp{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.grp>span{font-size:12px;color:#4a4743;margin-right:4px}
+.sw{height:28px;padding:0 10px;border-radius:6px;font-size:13px;color:#3d3d3d}
+.sw:hover{background:#cfcdc8}
+.sw[aria-current=true]{background:var(--accent);color:#fff}
+.hint{font-size:12px;color:#4a4743;margin:0 0 10px}
+.fit{position:relative;width:100%}
+.stage{position:absolute;left:0;top:0;width:1280px;height:800px;transform-origin:0 0;background:var(--ground);border-radius:10px;overflow:hidden;border:1px solid #bdbab5}
+
+/* ---------- window ---------- */
+.win{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--ground)}
+.titlebar{height:32px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 16px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)}
+.wc{display:flex;gap:18px}
+.topbar{height:48px;flex:none;display:flex;align-items:center;gap:16px;padding:0 32px;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:500;font-size:16px;width:200px}
+.cmd{flex:1;max-width:420px;margin:0 auto;height:32px;display:flex;align-items:center;gap:8px;padding:0 10px;border:1px solid var(--control);border-radius:6px;background:var(--surface);color:var(--muted);font-size:14px;text-align:left}
+.cmd kbd{margin-left:auto}
+kbd{font-family:var(--font);font-size:12px;line-height:18px;padding:0 6px;border:1px solid var(--control);border-bottom-width:2px;border-radius:4px;background:var(--surface);color:#3d3d3d}
+.chips{display:flex;gap:8px;width:auto;justify-content:flex-end;margin-left:0}
+.chip{height:32px;display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:6px;font-size:14px;border:1px solid transparent}
+.chip:hover{background:var(--raised)}
+.chip .s{color:var(--muted);font-size:12px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--positive);flex:none}
+.dot.off{background:var(--negative)}
+.scroll{flex:1;overflow:auto;padding:24px 24px 32px 32px;scrollbar-width:thin}
+.canvas{display:grid;grid-template-columns:minmax(0,1fr) 416px;gap:var(--gap);width:100%}
+.canvas .full{grid-column:1/-1}
+.titlerow{display:flex;align-items:center;gap:12px;min-height:36px;margin-bottom:0}
+.titlerow h1{font-size:24px;line-height:32px;font-weight:500;flex:none}
+.titlerow .sp{flex:1}
+.stamp{font-size:12px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);padding:var(--pad)}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--control);background:var(--surface);font-size:14px;font-weight:500;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--raised)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{background:#2b2b2b}
+.btn.sm{height:28px;padding:0 10px;font-size:13px}
+.btn[disabled]{color:#6b6b6b;background:var(--raised);border-color:var(--border);cursor:default}
+.link{color:var(--text);text-decoration:underline;text-decoration-color:var(--control);text-underline-offset:3px;font-size:13px}
+.seg{display:inline-flex;padding:2px;background:var(--raised);border-radius:8px;gap:2px}
+.seg button{height:28px;padding:0 12px;border-radius:6px;font-size:13px;color:#3d3d3d;border:1px solid transparent}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--text);font-weight:500;border-color:var(--control)}
+.pill{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:10px;font-size:12px;font-weight:500;white-space:nowrap;flex:none}
+.pill.n{background:var(--pill-neutral-bg);color:var(--pill-neutral-ink)}
+.pill.w{background:var(--pill-warn-bg);color:var(--pill-warn-ink);box-shadow:inset 0 0 0 1px #fde68a}
+.pill.p{background:var(--pill-pos-bg);color:var(--pill-pos-ink)}
+.pill.g{background:var(--pill-neg-bg);color:var(--pill-neg-ink)}
+.notice{display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:6px;background:var(--pill-warn-bg);border:1px solid #fde68a;color:var(--pill-warn-ink);font-size:13px}
+.notice .sp{flex:1}
+.notice .link{color:var(--pill-warn-ink)}
+
+/* hero */
+.hero{display:flex;flex-direction:column;gap:0}
+.hero .top{display:flex;align-items:flex-start;gap:16px}
+.hero .lab{font-size:13px;color:var(--muted)}
+.big{font-size:36px;line-height:44px;font-weight:700;letter-spacing:-.02em}
+.big .u,.pace .u{font-size:16px;font-weight:400;color:var(--muted);letter-spacing:0;margin-left:4px}
+.sub{font-size:14px;color:var(--muted)}
+.sub b{font-weight:500;color:var(--text)}
+.pos{color:var(--positive);font-weight:500}
+.neg{color:var(--negative);font-weight:500}
+.chartwrap{margin-top:10px;position:relative}
+.chartwrap svg{display:block;overflow:visible}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--control);border-radius:6px;padding:2px 8px;font-size:12px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.08);display:none}
+
+/* session */
+.sess{display:flex;flex-direction:column;gap:14px}
+.sess .hd{display:flex;align-items:center;gap:8px}
+.sess .hd h2{font-size:16px;line-height:24px;font-weight:500}
+.sess .hd .sp{flex:1}
+.pace{font-size:26px;line-height:32px;font-weight:700;letter-spacing:-.02em}
+.lad{display:flex;flex-direction:column;gap:2px}
+.lad .r{display:grid;grid-template-columns:84px 1fr 56px;align-items:center;height:28px;font-size:13px}
+.lad .r .bar{height:6px;border-radius:3px;background:transparent;position:relative}
+.lad .r .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:#b9b6b1}
+.lad .r.now .bar i{background:var(--hue)}
+.lad .r.now{font-weight:500}
+.lad .r .v{text-align:right}
+.lad .r .v.d{color:var(--muted)}
+.kv{display:flex;flex-direction:column}
+.kv .r{display:flex;justify-content:space-between;gap:12px;height:26px;align-items:center;font-size:13px;border-top:1px solid var(--rule)}
+.kv .r span:first-child{color:var(--muted)}
+
+/* table */
+.card.tbl{padding:0}
+.tbl .hd{display:flex;align-items:center;gap:12px;padding:12px var(--pad)}
+.tbl .hd h2{font-size:16px;line-height:24px;font-weight:500}
+.tbl .hd .sp{flex:1}
+.trow{display:grid;align-items:center;gap:16px;padding:0 var(--pad);height:44px;border-top:1px solid var(--rule);font-size:14px}
+.trow.h{height:32px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+.trow.t{border-top:1px solid var(--border);font-weight:500;height:48px}
+.trow .r{text-align:right}
+.trow.bytab{grid-template-columns:1fr 90px 130px minmax(0,500px)}
+.trow.byitem{grid-template-columns:1fr 190px 70px 100px 120px minmax(0,300px)}
+.thin{height:2px;background:transparent;position:relative}
+.thin i{position:absolute;left:0;top:0;bottom:0;background:#c3c0bb}
+.thin.top i{background:var(--accent)}
+.dash{color:var(--muted)}
+.unp{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 24px;padding:10px var(--pad) 14px;border-top:1px solid var(--rule);font-size:13px}
+.unp div span{color:var(--muted)}
+.empty{margin:0 var(--pad) var(--pad);border:1px dashed var(--control);border-radius:8px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px}
+
+/* skeleton */
+.sk{display:inline-block;background:#e3e1dd;border-radius:4px;vertical-align:middle}
+
+/* scrim, palette, dialogs */
+.scrim{position:absolute;inset:0;background:rgba(10,10,10,.16)}
+.layer{position:absolute;background:var(--surface);border:1px solid var(--control);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.pal{left:340px;top:96px;width:600px}
+.pal .in{display:flex;align-items:center;gap:10px;height:48px;padding:0 16px;border-bottom:1px solid var(--border);font-size:16px}
+.pal .in input{flex:1;border:0;outline:0;font:inherit;background:none;color:var(--text)}
+.pal .in input::placeholder{color:#6b6b6b}
+.pal .list{max-height:496px;overflow:auto;padding:4px 8px 8px}
+.pal .g{font-size:12px;color:var(--muted);padding:12px 8px 4px}
+.pal .it{display:flex;align-items:center;gap:12px;height:34px;padding:0 8px;border-radius:6px;font-size:14px;width:100%;text-align:left}
+.pal .it[aria-selected=true],.pal .it:hover{background:var(--raised)}
+.pal .it .sp{flex:1}
+.pal .it .k{font-size:12px;color:var(--muted)}
+.pal .ft{display:flex;gap:16px;padding:8px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+.pop{left:786px;top:84px;width:380px;padding:16px}
+.pop:before{content:"";position:absolute;top:-6px;right:78px;width:10px;height:10px;background:var(--surface);border-left:1px solid var(--control);border-top:1px solid var(--control);transform:rotate(45deg)}
+.pop h3,.dlg h3{font-size:14px;line-height:20px;font-weight:500;margin-bottom:6px}
+.opt{display:flex;align-items:center;gap:10px;height:34px;padding:0 8px;border-radius:6px;width:100%;text-align:left;font-size:14px}
+.opt:hover{background:var(--raised)}
+.opt .sp{flex:1}
+.opt .s{font-size:12px;color:var(--muted)}
+.radio{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--control);flex:none;position:relative;background:#fff}
+.radio.on{border-color:var(--accent)}
+.radio.on:after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--accent)}
+.cb{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--control);flex:none;background:#fff;display:flex;align-items:center;justify-content:center}
+.cb.on{background:var(--accent);border-color:var(--accent)}
+.cb svg{display:none}.cb.on svg{display:block}
+.sep{height:1px;background:var(--border);margin:12px -16px}
+.dlg{left:320px;top:72px;width:640px;padding:0}
+.dlg .hd{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border)}
+.dlg .hd h2{font-size:16px;line-height:24px;font-weight:500;flex:1}
+.dlg .bd{padding:4px 20px 16px;max-height:600px;overflow:auto}
+.srow{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:center;min-height:52px;border-bottom:1px solid var(--rule);padding:8px 0;font-size:14px}
+.srow:last-child{border-bottom:0}
+.srow .l small{display:block;font-size:12px;color:var(--muted);line-height:16px}
+.rec{height:32px;min-width:150px;border:1px solid var(--control);border-radius:6px;display:inline-flex;align-items:center;gap:6px;padding:0 10px;background:#fff;font-size:13px}
+.rec.on{border-color:var(--hue);box-shadow:0 0 0 1px var(--hue);color:var(--muted)}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--control);border-top-color:var(--accent);animation:sp 1s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.steps{display:flex;flex-direction:column}
+.step{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;min-height:56px;border-top:1px solid var(--rule)}
+.step:first-child{border-top:0}
+.step .n{width:24px;height:24px;border-radius:50%;border:1px solid var(--control);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted)}
+.step .n.done{background:var(--accent);border-color:var(--accent);color:#fff}
+.step small{display:block;font-size:12px;color:var(--muted);line-height:16px}
+.prog{height:4px;border-radius:2px;background:var(--raised);position:relative;width:120px}
+.prog i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--accent)}
+
+/* ---------- game stand-in and overlay cards ---------- */
+.game{position:absolute;inset:0;background:#0e0f11}
+.ov{position:absolute;width:320px;background:#fff;border:1px solid var(--control);border-radius:8px;padding:14px 16px;box-shadow:0 8px 28px rgba(0,0,0,.45);color:var(--text)}
+.ov .nm{display:flex;align-items:baseline;gap:8px;justify-content:space-between}
+.ov .nm b{font-weight:500;font-size:14px;line-height:20px}
+.ov .nm span{font-size:12px;color:var(--muted);white-space:nowrap}
+.ov .pr{display:flex;align-items:baseline;gap:10px;margin-top:6px}
+.ov .pr .a{font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.02em}
+.ov .pr .a i{font-style:normal;font-size:14px;font-weight:400;color:var(--muted);margin-left:3px;letter-spacing:0}
+.ov .pr .b{font-size:14px;color:var(--muted)}
+.ov .meta{font-size:12px;color:var(--muted);margin-top:2px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ov .tr{display:flex;align-items:center;gap:10px;margin-top:10px}
+.ov .tr svg{flex:none}
+.ov .tr span{font-size:12px;color:var(--muted);white-space:nowrap}
+.ov .ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--rule);font-size:12px;color:var(--muted)}
+.ov .ft a{color:var(--text);text-decoration:underline;text-decoration-color:var(--control);text-underline-offset:3px;font-size:13px}
+.ov .why{font-size:13px;margin-top:8px;line-height:18px}
+.flt{display:grid;grid-template-columns:16px 1fr auto 52px;gap:8px;align-items:center;height:32px;font-size:13px;border-top:1px solid var(--rule)}
+.flt.off .t{color:var(--muted)}
+.flt .t{white-space:nowrap}
+.flt .roll{font-size:12px;color:var(--muted)}
+.flt .box{height:24px;border:1px solid var(--control);border-radius:4px;text-align:right;padding:0 6px;line-height:22px;font-size:13px}
+.flt.off .box{background:var(--raised);color:var(--muted)}
+.gem{display:grid;grid-template-columns:1fr auto;gap:0 12px;padding:6px 0;border-top:1px solid var(--rule)}
+.gem .n{font-size:13px;line-height:18px}
+.gem .p{font-size:14px;font-weight:700;text-align:right;line-height:18px}
+.gem .p i{font-style:normal;font-weight:400;color:var(--muted);font-size:12px}
+.gem .m{font-size:12px;color:var(--muted);grid-column:1/-1;line-height:16px}
+.gem.best .n{font-weight:500}
+.gem.un .n{color:var(--muted)}
+.ovprog{height:4px;border-radius:2px;background:var(--raised);position:relative;margin-top:10px}
+.ovprog i{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--accent);transition:width 1s linear}
+
+@media (max-width:700px){.index .ttl{width:100%}}
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="index" id="index"></div>
+  <p class="hint" id="hint"></p>
+  <div class="fit" id="fit"><div class="stage" id="stage"></div></div>
+</main>
+
+<script>
+/* ============================================================
+   DATA: real Allflame prices from the relay mirror (poe.ninja + exchange),
+   quantities and tab names are sample content.
+   Divine rate: exchange-Currency "divine" = 502.5 chaos.
+   ============================================================ */
+const DIV = 502.5;
+const nf  = n => Math.round(n).toLocaleString('en-US');
+const f2  = n => n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const f1  = n => n.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+const TABS = [
+  {name:'Currency', rows:[
+    ['Divine Orb',7,502.5],['Orb of Dominance',1,2469],['Tempering Orb',4,925.1],
+    ['Tailoring Orb',2,1394],['Orb of Conflict',1,615.6],['Exalted Orb',120,2.78]]},
+  {name:'Fragments & Scarabs', rows:[
+    ['Horned Scarab of Preservation',2,604],['Cosmic Fragment',3,613.3],['Reality Fragment',4,357.5],
+    ['Blazing Fragment',5,293.1],['Cartography Scarab of Risk',6,43.76],['Ambush Scarab of Containment',9,34.23]]},
+  {name:'Uniques', rows:[['Garb of the Ephemeral',1,2512],['Doppelgänger Guise',1,380]]},
+  {name:'Gems', rows:[['Cyclone of Tumult 20/20',1,1508],['Spark of the Nova 20/20',2,1005]]},
+];
+const RARES = [['Dread Coil','Vaal Regalia'],['Gale Fetter','Sorcerer Boots'],['Havoc Grip','Spiked Gloves'],
+  ['Blight Mask','Hubris Circlet'],['Doom Loop','Diamond Ring'],['Phoenix Cord','Stygian Vise'],
+  ['Hydra Clutch','Opal Ring'],['Storm Brand','Titanium Spirit Shield'],['Rift Sash','Leather Belt']];
+TABS.forEach(t=>{ t.rows=t.rows.map(([n,q,u])=>({n,q,u,v:Math.round(q*u),tab:t.name})); t.v=t.rows.reduce((a,r)=>a+r.v,0); t.items=t.rows.reduce((a,r)=>a+r.q,0); });
+const ITEMS = TABS.flatMap(t=>t.rows).sort((a,b)=>b.v-a.v);
+const TOTAL = TABS.reduce((a,t)=>a+t.v,0);
+const NITEMS = TABS.reduce((a,t)=>a+t.items,0)+RARES.length;
+console.assert(ITEMS.reduce((a,r)=>a+r.v,0)===TOTAL,'rows sum to total');
+console.assert(TOTAL===26350,'total expected 26,350');
+
+/* Session 4 snapshots (chaos), every 10 min from 11:30 to 13:00; last = latest Snapshot */
+const SNAPS = [22930,23260,23275,24110,24590,24820,25260,25190,25940,TOTAL];
+const sessStartMin = 11*60+30;
+const SESS = SNAPS.map((c,i)=>({t:new Date(2026,10,9,11,30+10*i).getTime(), v:c/DIV, c}));
+console.assert(SNAPS[9]===TOTAL);
+const gain   = SNAPS[9]-SNAPS[0];            // 3,420 c
+const hours  = (SNAPS.length-1)*10/60;       // 1.5 h between first and last Snapshot
+const pace   = gain/hours/DIV;               // div per hour
+const paceS  = f2(pace);                      // "4.54"
+const prev = [ {n:'Session 3',min:130,earn:3600}, {n:'Session 2',min:95,earn:2310} ];
+prev.forEach(s=>{s.pace=s.earn/(s.min/60)/DIV; s.paceS=f2(s.pace);});
+const vsS3 = f2(parseFloat(paceS)-parseFloat(prev[0].paceS));   // difference of the two displayed values
+/* League history: end-of-day snapshots (sample), divine */
+const DAILY = [2.1,5.6,9.4,12.8,15.1,19.8,24.3,23.1,27.9,31.6,35.0,38.2,45.4].map((v,i)=>({t:new Date(2026,9,27+i,23,50).getTime(),v}));
+
+/* ============================================================ icons */
+const I = {
+  search:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#66625d" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></svg>',
+  chev:'<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#66625d" stroke-width="1.5"><path d="M3 4.5 6 7.5 9 4.5"/></svg>',
+  ext:'<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M5 2.5H2.5v7h7V7M7 2.5h2.5V5M9.5 2.5 5.5 6.5"/></svg>',
+  check:'<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="1.8"><path d="M1.8 5.2 4 7.4 8.2 2.6"/></svg>',
+  mark:'<svg width="22" height="22" viewBox="0 0 22 22" fill="#141414"><rect x="3" y="3" width="10" height="4" rx="2"/><rect x="3" y="9" width="16" height="4" rx="2"/><rect x="3" y="15" width="12" height="4" rx="2"/></svg>',
+  win:'<svg width="48" height="12" viewBox="0 0 48 12" fill="none" stroke="#66625d" stroke-width="1.2"><path d="M2 6h8"/><rect x="19" y="1.5" width="9" height="9"/><path d="M37 1.5l9 9M46 1.5l-9 9"/></svg>'
+};
+const cb = (on)=>`<span class="cb ${on?'on':''}">${I.check}</span>`;
+
+/* ============================================================ chart */
+let range='session';
+function niceTicks(min,max){
+  for(const s of [0.5,1,2,5,10,20]){
+    let lo=Math.floor(min/s)*s, hi=Math.ceil(max/s)*s; if(hi-max<s*0.15) hi+=s;
+    if((hi-lo)/s+1<=6) {const t=[];for(let v=lo;v<=hi+1e-9;v+=s)t.push(v);return t;}
+  }
+}
+function chart(){
+  const W=728,H=252,ml=36,mr=6,mt=16,mb=24;
+  let pts, xt=[];
+  const T=(y,m,d,h=0,mi=0)=>new Date(y,m,d,h,mi).getTime();
+  if(range==='session'){ pts=SESS; xt=[0,1,2,3].map(i=>({t:T(2026,10,9,11+Math.floor((30+30*i)/60),(30+30*i)%60)})); }
+  else if(range==='7d'){ pts=[...DAILY.slice(-7),...SESS]; for(let d=3;d<=9;d++) xt.push({t:T(2026,10,d),l:'Nov '+d}); }
+  else { pts=[...DAILY,...SESS]; for(let k=0;k<7;k++){const d=new Date(2026,9,28+2*k); xt.push({t:d.getTime(),l:d.toLocaleDateString('en-US',{month:'short',day:'numeric'})});} }
+  xt.forEach(x=>{ if(!x.l) x.l=new Date(x.t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); });
+  const vs=pts.map(p=>p.v); const ticks=niceTicks(Math.min(...vs),Math.max(...vs));
+  const lo=ticks[0], hi=ticks[ticks.length-1];
+  const t0=pts[0].t, t1=pts[pts.length-1].t;
+  const X=t=>ml+(t-t0)/(t1-t0)*(W-ml-mr), Y=v=>mt+(1-(v-lo)/(hi-lo))*(H-mt-mb);
+  const s0=SESS[0].t;
+  const ink=pts.filter(p=>p.t<s0), blue=pts.filter(p=>p.t>=s0);
+  const line=a=>a.map((p,i)=>(i?'L':'M')+X(p.t).toFixed(1)+' '+Y(p.v).toFixed(1)).join(' ');
+  let g='';
+  ticks.forEach((v,i)=>{ const y=Y(v).toFixed(1);
+    g+=`<line x1="${ml}" x2="${W-mr}" y1="${y}" y2="${y}" stroke="${i===0?'#9a9792':'#e4e2de'}" stroke-width="1" ${i===0?'':'stroke-dasharray="3 3"'}/>`;
+    g+=`<text x="${ml-8}" y="${(+y+4)}" text-anchor="end" font-size="12" fill="#66625d" class="num">${v}</text>`; });
+  xt.forEach((x,i)=>{ const px=X(x.t); if(px<ml-1||px>W-mr+1) return;
+    const a = i===0&&Math.abs(px-ml)<30?'start':(i===xt.length-1&&W-mr-px<30?'end':'middle');
+    g+=`<text x="${px.toFixed(1)}" y="${H-6}" text-anchor="${a}" font-size="12" fill="#66625d">${x.l}</text>`; });
+  let ann='';
+  if(range!=='session'){ const px=X(s0);
+    ann=`<line x1="${px}" x2="${px}" y1="${mt-2}" y2="${H-mb}" stroke="#8a8a8a" stroke-width="1"/><text x="${px-6}" y="${mt-4}" text-anchor="end" font-size="12" fill="#3d3d3d">Session 4 began 11:30</text>`; }
+  const last=pts[pts.length-1];
+  const endl=`<text x="${X(last.t)}" y="${Y(last.v)-10}" text-anchor="end" font-size="12" font-weight="500" fill="#0a0a0a" class="num">${f1(last.v)} div now</text>`;
+  const joint = ink.length&&blue.length ? `<path d="M${X(ink[ink.length-1].t).toFixed(1)} ${Y(ink[ink.length-1].v).toFixed(1)} L${X(blue[0].t).toFixed(1)} ${Y(blue[0].v).toFixed(1)}" stroke="#141414" stroke-width="2" fill="none"/>`:'';
+  return `<div class="chartwrap" id="cw"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" id="ch" role="img" aria-label="Net worth in divine, ${range}">
+    ${g}${ann}
+    ${ink.length?`<path d="${line(ink)}" stroke="#141414" stroke-width="2" fill="none" stroke-linejoin="round"/>`:''}${joint}
+    <path d="${line(blue)}" stroke="#1d5fbf" stroke-width="2" fill="none" stroke-linejoin="round"/>
+    ${endl}
+    <circle id="hd" r="4" fill="#fff" stroke="#141414" stroke-width="2" cx="0" cy="0" style="display:none"/>
+    <rect x="${ml}" y="0" width="${W-ml-mr}" height="${H-mb}" fill="transparent" id="hit"/>
+  </svg><div class="tip" id="tip"></div></div>`;
+}
+function wireChart(){
+  const hit=document.getElementById('hit'); if(!hit) return;
+  const W=728,ml=36,mr=6,H=252,mt=16,mb=24;
+  let pts = range==='session'?SESS:(range==='7d'?[...DAILY.slice(-7),...SESS]:[...DAILY,...SESS]);
+  const vs=pts.map(p=>p.v), ticks=niceTicks(Math.min(...vs),Math.max(...vs)), lo=ticks[0], hi=ticks[ticks.length-1];
+  const t0=pts[0].t,t1=pts[pts.length-1].t, X=t=>ml+(t-t0)/(t1-t0)*(W-ml-mr), Y=v=>mt+(1-(v-lo)/(hi-lo))*(H-mt-mb);
+  const hd=document.getElementById('hd'), tip=document.getElementById('tip');
+  hit.addEventListener('mousemove',e=>{
+    const r=hit.getBoundingClientRect(); const sc=r.width/(W-ml-mr); const x=(e.clientX-r.left)/sc+ml;
+    let b=pts[0]; for(const p of pts) if(Math.abs(X(p.t)-x)<Math.abs(X(b.t)-x)) b=p;
+    hd.style.display='block'; hd.setAttribute('cx',X(b.t)); hd.setAttribute('cy',Y(b.v));
+    const d=new Date(b.t); const day=d.toLocaleDateString('en-US',{month:'short',day:'numeric'}), hm=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    tip.textContent=`${day} ${hm} · ${f1(b.v)} div`; tip.style.display='block';
+    tip.style.left=Math.min(X(b.t)+10,W-150)+'px'; tip.style.top=(Y(b.v)-34)+'px';
+  });
+  hit.addEventListener('mouseleave',()=>{hd.style.display='none';tip.style.display='none';});
+}
+
+/* ============================================================ main window pieces */
+let view='tab', unpOpen=false;
+const bytab = ()=>{
+  const max=Math.max(...TABS.map(t=>t.v));
+  const rows=[...TABS].sort((a,b)=>b.v-a.v).map((t,i)=>`<div class="trow bytab"><span>${t.name}</span><span class="r num">${t.items}</span><span class="r num">${nf(t.v)}</span><span class="thin ${i===0?'top':''}"><i style="width:${(t.v/max*100).toFixed(1)}%"></i></span></div>`).join('');
+  const rare=`<div class="trow bytab"><span>Rares</span><span class="r num">${RARES.length}</span><span class="r num dash">0</span><span><button class="link" data-act="unp">${RARES.length} unpriced, ${unpOpen?'hide':'list'}</button></span></div>`;
+  return `<div class="trow h bytab"><span>Stash tab</span><span class="r">Items</span><span class="r">Chaos</span><span>Share of total</span></div>${rows}${rare}${unpOpen?unp():''}
+  <div class="trow t bytab"><span>Total</span><span class="r num">${NITEMS}</span><span class="r num">${nf(TOTAL)}</span><span class="stamp">${f1(TOTAL/DIV)} div at ${f1(DIV)} c per div</span></div>`;
+};
+const unp = ()=>`<div class="unp">${RARES.map(r=>`<div>${r[0]} <span>${r[1]}</span></div>`).join('')}</div>`;
+const byitem = ()=>{
+  const all=view==='all', top=all?ITEMS:ITEMS.slice(0,6), rest=all?[]:ITEMS.slice(6), restV=rest.reduce((a,r)=>a+r.v,0), max=top[0].v;
+  const rows=top.map((r,i)=>`<div class="trow byitem"><span>${r.n}</span><span class="muted">${r.tab}</span><span class="r num">${r.q}</span><span class="r num">${f2(r.u)}</span><span class="r num">${nf(r.v)}</span><span class="thin ${i===0?'top':''}"><i style="width:${(r.v/max*100).toFixed(1)}%"></i></span></div>`).join('');
+  return `<div class="trow h byitem"><span>Item</span><span>Stash tab</span><span class="r">Qty</span><span class="r">Each (c)</span><span class="r">Chaos</span><span>Share of the largest</span></div>${rows}
+  ${all?'':`<div class="trow byitem"><span class="muted">${rest.length} more items</span><span></span><span class="r num">${rest.reduce((a,r)=>a+r.q,0)}</span><span></span><span class="r num">${nf(restV)}</span><span><button class="link" data-act="seg" data-v="all">View all ${ITEMS.length}</button></span></div>`}
+  <div class="trow byitem"><span>Unpriced rares</span><span class="muted">Rares</span><span class="r num">${RARES.length}</span><span></span><span class="r num dash">0</span><span><button class="link" data-act="unp">${unpOpen?'hide':'list'}</button></span></div>${unpOpen?unp():''}
+  <div class="trow t byitem"><span>Total</span><span></span><span class="r num">${NITEMS}</span><span></span><span class="r num">${nf(TOTAL)}</span><span class="stamp">${f1(TOTAL/DIV)} div</span></div>`;
+};
+function breakdown(state){
+  if(state==='first') return `<section class="card tbl full"><div class="hd"><h2>Snapshot</h2><span class="sp"></span><span class="stamp">None yet</span></div>
+    <div class="trow h bytab"><span>Stash tab</span><span class="r">Items</span><span class="r">Chaos</span><span>Share of total</span></div>
+    <div class="empty">Your first Snapshot lists every stash tab here, with its items and value.</div></section>`;
+  if(state==='loading') return `<section class="card tbl full"><div class="hd"><h2>Snapshot</h2></div>
+    <div class="trow h bytab"><span>Stash tab</span><span class="r">Items</span><span class="r">Chaos</span><span>Share of total</span></div>
+    ${[0,1,2,3,4].map(i=>`<div class="trow bytab"><span><i class="sk" style="width:${150-i*14}px;height:14px"></i></span><span class="r"><i class="sk" style="width:28px;height:14px"></i></span><span class="r"><i class="sk" style="width:60px;height:14px"></i></span><span class="thin"><i style="width:${70-i*12}%;background:#e3e1dd"></i></span></div>`).join('')}</section>`;
+  return `<section class="card tbl full"><div class="hd"><h2>Snapshot 13:00</h2><span class="stamp">${TABS.length+1} stash tabs, all selected tabs covered</span><span class="sp"></span>
+    <div class="seg" role="group" aria-label="Breakdown"><button data-act="seg" data-v="tab" aria-pressed="${view==='tab'}">By tab</button><button data-act="seg" data-v="item" aria-pressed="${view!=='tab'}">By item</button></div></div>
+    ${view==='tab'?bytab():byitem()}</section>`;
+}
+function ladder(){
+  const max=6;
+  const w=v=>(v/max*100).toFixed(1)+'%';
+  return `<div class="lad" aria-label="Earnings per hour by Session">
+   <div class="r now"><span>Session 4</span><span class="bar"><i style="width:${w(pace)}"></i></span><span class="v num">${paceS}</span></div>
+   <div class="r"><span>Session 3</span><span class="bar"><i style="width:${w(prev[0].pace)}"></i></span><span class="v num">${prev[0].paceS}</span></div>
+   <div class="r"><span>Session 2</span><span class="bar"><i style="width:${w(prev[1].pace)}"></i></span><span class="v num">${prev[1].paceS}</span></div>
+   <div class="r"><span>Session 1</span><span class="bar"></span><span class="v d" title="Snapshots covered different stash tabs">—</span></div></div>`;
+}
+function sessionCard(state){
+  if(state==='first') return `<section class="card sess"><div class="hd"><h2>Session</h2><span class="sp"></span><button class="btn pri" disabled>Start Session</button></div>
+    <div class="sub">No Session yet. A Session measures earnings between its first and last Snapshot, so it starts after you sign in and take one.</div>
+    <div class="empty" style="margin:0">Earnings per hour appear here</div></section>`;
+  if(state==='loading') return `<section class="card sess"><div class="hd"><h2>Session 4</h2><span class="sp"></span></div>
+    <div><i class="sk" style="width:150px;height:32px"></i></div><div><i class="sk" style="width:260px;height:14px"></i></div>
+    <div class="lad">${[0,1,2,3].map(()=>`<div class="r"><span><i class="sk" style="width:60px;height:12px"></i></span><span class="bar"><i style="width:60%;background:#e3e1dd"></i></span><span></span></div>`).join('')}</div></section>`;
+  const exp = state==='signedout';
+  return `<section class="card sess"><div class="hd"><h2>Session 4</h2>${exp?'<span class="pill w">Paused</span>':'<span class="pill p">Running</span>'}<span class="sp"></span>
+    ${exp?'<button class="btn pri" data-go="signin">Sign in again</button>':'<button class="btn pri">Stop Session</button>'}</div>
+    <div><div class="pace num">+${paceS}<span class="u">div/h</span></div>
+    <div class="sub"><span class="pos num">+${vsS3}</span> div/h against Session 3 (${prev[0].paceS})</div></div>
+    ${exp?`<div class="notice"><span class="sp">Sign-in expired at 12:58. Snapshots paused; the last is 13:00.</span></div>`:ladder()}
+    <div class="kv">
+      <div class="r"><span>Started</span><span class="num">11:28, 1 h 40 min ago</span></div>
+      <div class="r"><span>First to last Snapshot</span><span class="num">${nf(SNAPS[0])} to ${nf(SNAPS[9])} c</span></div>
+      <div class="r"><span>Snapshots</span><span class="num">${SNAPS.length}, every 10 min</span></div>
+      <div class="r"><span>Same stash tabs in all</span><span>Yes, ${TABS.length+1} tabs</span></div></div></section>`;
+}
+function hero(state){
+  if(state==='first') return `<section class="card hero">
+    <div class="steps"><div class="hd" style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><h2 style="font-size:16px;line-height:24px;font-weight:500">Set up wealth tracking</h2><span class="sp" style="flex:1"></span><span class="stamp">0 of 3</span><span class="prog"><i style="width:0%"></i></span></div>
+      <div class="step"><span class="n">1</span><span>Sign in with your GGG account<small>Opens pathofexile.com in your browser. Price Check works without it.</small></span><button class="btn pri" data-go="signin">Sign in with GGG</button></div>
+      <div class="step"><span class="n">2</span><span>League<small>Allflame, the current challenge League</small></span><button class="btn sm" data-go="pop">Change</button></div>
+      <div class="step"><span class="n">3</span><span>Stash tabs<small>All tabs except Remove-only ones, once you are signed in</small></span><span class="stamp">After sign-in</span></div></div>
+    <div style="margin-top:16px"><div class="sub">Not signed in? Hover an item in game and press <kbd>Ctrl</kbd> <kbd>D</kbd> to price it right now.</div></div></section>`;
+  if(state==='loading') return `<section class="card hero"><div class="top"><div><div class="lab">Worth now</div><div><i class="sk" style="width:200px;height:44px"></i></div><div style="margin-top:6px"><i class="sk" style="width:300px;height:14px"></i></div></div></div>
+    <div style="margin-top:18px;height:252px;position:relative"><svg width="728" height="252"><line x1="36" x2="722" y1="228" y2="228" stroke="#9a9792"/>${[50,100,150,200].map(y=>`<line x1="36" x2="722" y1="${y}" y2="${y}" stroke="#e4e2de" stroke-dasharray="3 3"/>`).join('')}</svg></div></section>`;
+  const stale = state==='stale';
+  return `<section class="card hero"><div class="top"><div style="flex:1">
+      <div class="lab">Worth now, Allflame${stale?', at cached prices':''}</div>
+      <div class="big num">${f1(TOTAL/DIV)}<span class="u">div</span></div>
+      <div class="sub"><span class="num">${nf(TOTAL)}</span> c at ${f1(DIV)} c per div · <b class="pos num">+${f1(gain/DIV)} div</b> since Session 4 began at 11:30</div></div>
+      <div class="seg" role="group" aria-label="Range">${[['session','Session'],['7d','7 days'],['league','League']].map(([k,l])=>`<button data-act="range" data-v="${k}" aria-pressed="${range===k}">${l}</button>`).join('')}</div></div>
+    ${chart()}</section>`;
+}
+function topbar(state){
+  const so = state==='signedout' || state==='first';
+  return `<div class="topbar"><div class="brand">${I.mark}Lootwise</div>
+    <button class="cmd" data-go="pal">${I.search}<span>Search commands, League, tabs, settings</span><kbd>Ctrl K</kbd></button>
+    <div class="chips"><button class="chip" data-go="pop" aria-label="League and stash tabs">Allflame ${I.chev}</button>
+    <button class="chip" data-go="${so?'signin':'pal'}"><span class="dot ${so?'off':''}"></span>${so?(state==='first'?'Signed out':'Signed out, expired'):'Signed in<span class="s">5 h 12 min left</span>'}</button></div></div>`;
+}
+function mainWin(state='ok'){
+  const stale = state==='stale';
+  const stamp = state==='first' ? '' : state==='loading' ? '<span class="stamp">Updating</span>' : state==='signedout' ? '<span class="stamp">Last Snapshot 13:00</span>' : `<span class="stamp">Snapshot 13:00 · prices 12:52</span>`;
+  const snapBtn = state==='first'||state==='loading'||state==='signedout' ? '<button class="btn" disabled>Take Snapshot</button>' : '<button class="btn">Take Snapshot</button>';
+  return `<div class="win"><div class="titlebar"><span>Lootwise</span><span class="wc">${I.win}</span></div>${topbar(state)}
+   <div class="scroll"><div class="canvas">
+     <div class="titlerow full"><h1>Net worth</h1><span class="sp"></span>${stamp}${snapBtn}</div>
+     ${stale?`<div class="notice full"><span class="sp"><b style="font-weight:500">Price relay unreachable.</b> Valuing at cached prices from 09:52, 3 h 16 min old. Valuations show low confidence.</span><button class="link">Retry</button></div>`:''}
+     ${hero(state)}${sessionCard(state)}${breakdown(state)}
+   </div></div></div>`;
+}
+
+/* ============================================================ layers over the window */
+const PAL=[
+ ['Session',[['Stop Session','Ctrl Shift S'],['Take Snapshot now','Ctrl S'],['Previous Sessions','Session 3, 2, 1']]],
+ ['Wealth',[['Switch League','Allflame'],['Choose stash tabs','5 of 6'],['Show values in chaos','']]],
+ ['Account',[['Sign out','Signed in, 5 h 12 min left'],['Sign in with GGG','']]],
+ ['Lootwise',[['Settings','Ctrl ,'],['Hotkeys','Ctrl D, Ctrl Alt D'],['Relay status','Updated 12:52'],['Plugins','None installed'],['Check for updates','0.1.1 available']]]
+];
+function palette(){
+  const items=PAL.map(([g,l])=>`<div class="g">${g}</div>`+l.map(([n,k])=>`<button class="it" role="option" data-n="${n}" data-g="${g}"><span>${n}</span><span class="sp"></span><span class="k">${k}</span></button>`).join('')).join('');
+  return `<div class="scrim" data-go="main"></div><div class="layer pal" role="dialog" aria-label="Command palette"><div class="in">${I.search}<input id="q" placeholder="Type a command" autocomplete="off" aria-label="Command"><kbd>Esc</kbd></div>
+   <div class="list" role="listbox" id="plist">${items}</div><div class="ft"><span>Up and down to move</span><span>Enter to run</span><span>Esc to close</span></div></div>`;
+}
+function popover(){
+  const lg=[['Allflame','Current challenge League',true],['Hardcore Allflame','',false],['Standard','',false]];
+  const tb=[['Currency',1,1],['Fragments & Scarabs',1],['Uniques',1],['Gems',1],['Rares',1],['Dump','Remove-only',0]];
+  return `${mainWin('ok')}<div class="scrim" data-go="main" style="background:transparent"></div><div class="layer pop" role="dialog" aria-label="League and stash tabs">
+    <h3>League</h3>${lg.map(([n,s,on])=>`<button class="opt"><span class="radio ${on?'on':''}"></span><span>${n}</span><span class="sp"></span><span class="s">${s}</span></button>`).join('')}
+    <div class="sep"></div><h3>Stash tabs counted in Snapshots</h3>
+    ${tb.map(([n,s])=>{const on=(n!=='Dump');return `<button class="opt">${cb(on)}<span>${n}</span><span class="sp"></span><span class="s">${on?'':'Remove-only, off by default'}</span></button>`}).join('')}
+    <div class="notice" style="margin-top:10px"><span class="sp">Changing tabs during a Session turns off its earnings figure.</span></div></div>`;
+}
+function settings(){
+  return `${mainWin('ok')}<div class="scrim" data-go="main"></div><div class="layer dlg" role="dialog" aria-label="Settings"><div class="hd"><h2>Settings</h2><button class="btn sm" data-go="main">Done</button></div><div class="bd">
+   <div class="srow"><div class="l">Price Check<small>Over an item in game</small></div><div><span class="rec"><kbd>Ctrl</kbd><kbd>D</kbd></span></div></div>
+   <div class="srow"><div class="l">Screen Price Check<small>At the Divine Font</small></div><div style="display:flex;gap:10px;align-items:center"><span class="rec on">Press the new keys</span><span class="stamp">Esc cancels</span></div></div>
+   <div class="srow"><div class="l">Snapshot interval<small>During a Session</small></div><div class="seg"><button aria-pressed="false">5 min</button><button aria-pressed="true">10 min</button><button aria-pressed="false">15 min</button><button aria-pressed="false">30 min</button></div></div>
+   <div class="srow"><div class="l">Price relay<small>Checks every 15 min</small></div><div style="display:flex;align-items:center;gap:10px"><span class="pill p">Up to date</span><span class="muted">Last update 12:52, 16 min ago. Files that changed only.</span></div></div>
+   <div class="srow"><div class="l">Game window<small>For overlays</small></div><div class="muted">Windowed or borderless. Overlays cannot appear over exclusive fullscreen.</div></div>
+   <div class="srow"><div class="l">Plugins</div><div class="muted">None installed. Plugins can add price sources and item details.</div></div>
+   <div class="srow"><div class="l">About</div><div style="display:flex;align-items:center;gap:10px"><span>Lootwise 0.1.0</span><span class="pill n">0.1.1 available</span><a class="link" href="#" onclick="return false">Release notes ${I.ext}</a></div></div></div></div>`;
+}
+function signin(){
+  return `${mainWin('first')}<div class="scrim"></div><div class="layer" style="left:420px;top:200px;width:440px;padding:24px"><h3 style="font-size:16px;line-height:24px">Sign in with GGG</h3>
+   <p class="muted" style="margin:8px 0 16px">Finish signing in on pathofexile.com in your browser. Lootwise never sees your password, and the sign-in lasts 10 hours.</p>
+   <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px"><span class="spin"></span><span>Waiting for your browser</span></div>
+   <div style="display:flex;gap:8px"><button class="btn">Open the page again</button><button class="btn" data-go="first">Cancel</button></div></div>`;
+}
+
+/* ============================================================ game stand-in and overlays */
+function game(px,py,body){
+  let inv='';
+  const cells=[[0,0,2,2,'#2b2f34'],[2,0,1,3,'#33302b'],[3,0,1,1,'#2b3430'],[4,0,2,4,'#2f2e35'],[6,0,1,2,'#35302d'],[7,0,1,1,'#2b3034'],[9,0,2,2,'#2d3430'],
+                [0,2,1,1,'#34302c'],[1,2,1,2,'#2c3035'],[3,1,1,1,'#303030'],[3,2,1,2,'#2d3331'],[6,2,2,2,'#322f2c'],[8,2,1,3,'#2b2f33'],[9,3,2,1,'#35322e']];
+  cells.forEach(([c,r,w,h,f])=>{inv+=`<rect x="${810+c*36+2}" y="${96+r*36+2}" width="${w*36-4}" height="${h*36-4}" fill="${f}" rx="2"/>`;});
+  let grid='';for(let c=0;c<=12;c++)grid+=`<line x1="${810+c*36}" x2="${810+c*36}" y1="96" y2="276" stroke="#1b1d20"/>`;for(let r=0;r<=5;r++)grid+=`<line x1="810" x2="1242" y1="${96+r*36}" y2="${96+r*36}" stroke="#1b1d20"/>`;
+  return `<div class="game"><svg width="1280" height="800" viewBox="0 0 1280 800" aria-hidden="true">
+   <rect width="1280" height="800" fill="#0e0f11"/>
+   ${[...Array(9)].map((_,i)=>`<line x1="0" x2="1280" y1="${380+i*52}" y2="${380+i*52}" stroke="#131518"/>`).join('')}
+   <ellipse cx="400" cy="470" rx="40" ry="16" fill="#08090a"/><rect x="386" y="400" width="28" height="64" rx="6" fill="#23262a"/><circle cx="400" cy="388" r="13" fill="#2a2e33"/>
+   <rect x="800" y="60" width="452" height="248" rx="4" fill="#15171a" stroke="#23262a"/><text x="814" y="82" font-size="13" fill="#6f7378" font-family="Geist">Inventory</text>
+   <rect x="810" y="96" width="432" height="180" fill="#121417"/>${grid}${inv}
+   <circle cx="110" cy="708" r="64" fill="#2a1214"/><circle cx="1170" cy="708" r="64" fill="#122431"/>
+   <rect x="440" y="740" width="400" height="38" rx="3" fill="#15171a" stroke="#23262a"/>${[...Array(8)].map((_,i)=>`<rect x="${448+i*48}" y="746" width="40" height="26" rx="2" fill="#1c1f23"/>`).join('')}
+   ${body||''}
+   <path d="M${px} ${py} v20 l5-5 l4 9 l3-1 l-4-9 h7z" fill="#fff" stroke="#000" stroke-width="1"/></svg></div>`;
+}
+const spark = (data,w=200,h=28)=>{ // data: % change vs 7 days ago, null = no data
+  const pts=data.map((v,i)=>v==null?null:[i,v]).filter(Boolean);
+  if(pts.length<3) return `<span style="font-size:12px;color:#66625d">Not enough listings for a 7-day trend</span>`;
+  const mn=Math.min(0,...pts.map(p=>p[1])), mx=Math.max(...pts.map(p=>p[1]));
+  const X=i=>2+i/(data.length-1)*(w-4), Y=v=>h-3-(v-mn)/(mx-mn||1)*(h-8);
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="7-day trend"><line x1="2" x2="${w-2}" y1="${Y(0)}" y2="${Y(0)}" stroke="#cfccc7" stroke-dasharray="3 3"/><path d="${pts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+' '+Y(p[1]).toFixed(1)).join(' ')}" fill="none" stroke="#141414" stroke-width="2" stroke-linejoin="round"/></svg>`;
+};
+const card=(px,py,inner)=>`<div class="ov" style="left:${px-346}px;top:${py-6}px" role="status">${inner}</div>`;
+const foot=(t='Esc closes')=>`<div class="ft"><a href="#" onclick="return false">poe.ninja ${I.ext}</a><span>${t}</span></div>`;
+function ovCommodity(){
+  const px=944,py=170;
+  return game(px,py)+card(px,py,`<div class="nm"><b>Garb of the Ephemeral</b><span>Savant's Robe</span></div>
+   <div class="pr"><span class="a num">5.00<i>div</i></span><span class="b num">2,512 c</span></div>
+   <div class="meta"><span class="num">696 listings</span><span>·</span><span>High confidence</span><span>·</span><span>prices 16 min old</span></div>
+   <div class="tr">${spark([0,2.47,0.12,3.04,18.99,15.52,25.41],150)}<span class="pos num">+25.4% in 7 days</span></div>${foot()}`);
+}
+function ovThin(){
+  const px=944,py=170;
+  return game(px,py)+card(px,py,`<div class="nm"><b>Herald of Agony</b><span>20/20 corrupted</span></div>
+   <div class="pr"><span class="a num">1.50<i>div</i></span><span class="b num">754 c</span><span class="pill w" style="margin-left:auto">Low confidence</span></div>
+   <div class="why">Only <b style="font-weight:500">6 listings</b>, fewer than 10. Treat this as a guide.</div>
+   <div class="meta"><span>prices 16 min old</span></div>
+   <div class="tr">${spark([null,0,null,null,null,null,null],196)}</div>${foot()}`);
+}
+function ovStale(){
+  const px=944,py=170;
+  return game(px,py)+card(px,py,`<div class="nm"><b>Garb of the Ephemeral</b><span>Savant's Robe</span></div>
+   <div class="pr"><span class="a num">5.00<i>div</i></span><span class="b num">2,512 c</span><span class="pill w" style="margin-left:auto">Low confidence</span></div>
+   <div class="why">Prices are <b style="font-weight:500">3 h 16 min old</b>. The relay can't be reached.</div>
+   <div class="meta"><span class="num">696 listings at 09:52</span></div>
+   <div class="tr">${spark([0,2.47,0.12,3.04,18.99,15.52,25.41],150)}<span class="pos num">+25.4% in 7 days</span></div>${foot()}`);
+}
+function filters(rows){
+  return rows.map(([on,l,roll,v])=>`<div class="flt ${on?'':'off'}">${cb(on)}<span class="t">${l}</span><span class="roll num">${roll}</span><span class="box num">${v}</span></div>`).join('');
+}
+const RARE_FILTERS=[[1,'Item level at least','','84'],[1,'Base type','Vaal Regalia','exact'],[1,'Total maximum Life','roll 110','99'],[1,'Total ele. resistance','roll 100','90'],[0,'Maximum Energy Shield','roll 60','54']];
+function ovRare(){
+  const px=944,py=170;
+  return game(px,py)+card(px,py,`<div class="nm"><b>Dread Coil</b><span>Rare · Vaal Regalia · item level 84</span></div>
+   <div class="pr"><span class="a num">1.6<i>div and up</i></span></div>
+   <div class="meta"><span class="num">23 listings</span><span>·</span><span>median <span class="num">2.4 div</span></span><span>·</span><span>Live Search</span></div>
+   <div style="margin-top:10px">${filters(RARE_FILTERS)}</div>
+   <div class="meta" style="margin:6px 0 0">Mod minimums start at 90% of the roll. Edit or switch off any row.</div>
+   <div class="ft"><button class="btn pri sm">Open on trade site ${I.ext}</button><span>Esc closes</span></div>`);
+}
+function ovNot(){
+  const px=944,py=170;
+  return game(px,py)+card(px,py,`<div class="nm"><b>Corroded Blade</b><span>Normal · Vaal Axe</span></div>
+   <div class="pr"><span class="a" style="color:#66625d">No price</span></div>
+   <div class="why">Not a Commodity Item. Normal items have no market price, and this does not mean it is worthless. Only uniques, currency, fragments and gems are priced here.</div>${foot()}`);
+}
+function ovNone(){
+  const px=944,py=170;
+  return game(px,py)+card(px,py,`<div class="nm"><b>Tempering Orb</b><span>Currency</span></div>
+   <div class="pr"><span class="a" style="color:#66625d">No price</span></div>
+   <div class="why">Prices are unavailable for <b style="font-weight:500">Hardcore Allflame</b>. The relay has no data for this League yet.</div>
+   <div class="meta" style="margin-top:6px"><span>Switch League: Ctrl K, then League</span></div>${foot()}`);
+}
+let rlTimer=null;
+function ovRate(){
+  const px=944,py=170;
+  return game(px,py)+card(px,py,`<div class="nm"><b>Dread Coil</b><span>Rare · Vaal Regalia · item level 84</span></div>
+   <div class="pr"><span class="a num" id="rlv" style="color:#0a0a0a">8<i>s</i></span><span class="b">until you can search again</span></div>
+   <div class="why">Rate limit reached. Lootwise waits for you so your account and IP stay safe.</div>
+   <div class="ovprog" aria-hidden="true"><i id="rlb" style="width:0%"></i></div>
+   <div style="margin-top:10px">${filters(RARE_FILTERS.slice(0,3))}</div>
+   <div class="ft"><button class="btn sm" id="rlbtn" disabled>Search again in 8 s</button><span>Esc closes</span></div>`);
+}
+function startRate(){
+  clearInterval(rlTimer); let s=8; const v=document.getElementById('rlv'); if(!v) return;
+  const tick=()=>{ const b=document.getElementById('rlbtn'),vv=document.getElementById('rlv'),bar=document.getElementById('rlb'); if(!b){clearInterval(rlTimer);return;}
+    bar.style.width=((8-s)/8*100)+'%';
+    if(s<=0){vv.innerHTML='0<i>s</i>';b.disabled=false;b.className='btn pri sm';b.textContent='Search again';clearInterval(rlTimer);return;}
+    vv.innerHTML=s+'<i>s</i>'; b.textContent='Search again in '+s+' s'; s--; };
+  tick(); rlTimer=setInterval(tick,1000);
+}
+function ovScreen(){
+  const opts=[['Summon Stone Golem of Safeguarding',1508,3.00,11],['Pact of Beidat',1005,2.00,44],['Elemental Hit of the Spectrum',1005,2.00,10]];
+  let body=`<rect x="420" y="190" width="440" height="330" rx="4" fill="#15171a" stroke="#23262a"/><text x="440" y="218" font-size="14" fill="#8a8e93" font-family="Geist">Divine Font</text>`;
+  const names=['Pact of Beidat','Summon Stone Golem of Safeguarding','Frost Blades of Katabasis','Elemental Hit of the Spectrum'];
+  names.forEach((n0,i)=>{ const n=i===2?'Fro■t Bla■es of Kata■asis':n0; body+=`<rect x="440" y="${236+i*70}" width="400" height="58" rx="3" fill="#1b1e22" stroke="${i===3?'#4a4e54':'#262a2f'}"/><text x="460" y="${270+i*70}" font-size="15" fill="#b7babe" font-family="Geist">${n}</text>`; });
+  const px=832,py=300; // cursor on the fourth option
+  const gem=(r,i)=>`<div class="gem ${i===0?'best':''}"><span class="n">${r[0]}</span><span class="p num">${f2(r[2])}<i> div</i></span><span class="m num">${nf(r[1])} c · ${r[3]} listings</span></div>`;
+  return game(px,py,body)+`<div class="ov" style="left:884px;top:230px;width:320px" role="status"><div class="nm"><b>Divine Font</b><span>Offered gem: 20/20 corrupted</span></div>
+   <div style="margin-top:6px">${opts.map(gem).join('')}
+   <div class="gem un"><span class="n">Unrecognised</span><span class="p" style="font-weight:400;color:#66625d">No price</span><span class="m">Option 3 could not be matched, so it is not guessed.</span></div></div>
+   <div class="ft"><span>Priced as 20/20 corrupted · prices 16 min old</span><span>Esc</span></div></div>`;
+}
+
+/* ============================================================ surfaces & navigation */
+const S=[
+ {id:'main',g:'Window',l:'Net worth',h:'The one main screen. Everything else is Ctrl K or one popover.',r:()=>mainWin('ok')},
+ {id:'pal',g:'Window',l:'Ctrl K',h:'Command palette: Session, League, tabs, account, settings. Type to filter, Enter runs.',r:()=>mainWin('ok')+palette()},
+ {id:'pop',g:'Window',l:'League and tabs',h:'The single popover, from the League chip: League picker and stash tab selection together.',r:popover},
+ {id:'set',g:'Window',l:'Settings',h:'Dialog from the palette: hotkeys with recorder, Snapshot interval, relay, Plugins, About.',r:settings},
+ {id:'first',g:'Window',l:'First run',h:'Empty frame keeps its place; the first action sits where the data will appear.',r:()=>mainWin('first')},
+ {id:'signin',g:'Window',l:'Sign in',h:'Waiting for the browser OAuth page.',r:signin},
+ {id:'signedout',g:'Window',l:'Signed out',h:'The 10-hour sign-in expired: data stays, Snapshots pause, one action to resume.',r:()=>mainWin('signedout')},
+ {id:'stale',g:'Window',l:'Relay stale',h:'Relay unreachable: cached prices, age stated, retry in the notice.',r:()=>mainWin('stale')},
+ {id:'loading',g:'Window',l:'Loading',h:'Final layout with flat grey bars at the real size of each value.',r:()=>mainWin('loading')},
+ {id:'ovc',g:'Overlay',l:'Commodity',h:'Price Check (Ctrl D) on a Commodity Item. The card is the only opaque thing; it never takes focus.',r:ovCommodity},
+ {id:'ovt',g:'Overlay',l:'Few listings',h:'Low confidence: fewer than about 10 listings.',r:ovThin},
+ {id:'ovs',g:'Overlay',l:'Stale prices',h:'Low confidence: relay data is old.',r:ovStale},
+ {id:'ovr',g:'Overlay',l:'Rare',h:'Live Search with editable filters and Open on trade site.',r:ovRare},
+ {id:'ovl',g:'Overlay',l:'Rate limited',h:'Live Search paused by the trade rate limit, with a live countdown.',r:ovRate},
+ {id:'ovn',g:'Overlay',l:'Not a Commodity Item',h:'Plain message; a missing price is not a zero price.',r:ovNot},
+ {id:'ovu',g:'Overlay',l:'League unavailable',h:'No relay prices for this League.',r:ovNone},
+ {id:'ovd',g:'Overlay',l:'Divine Font',h:'Screen Price Check (Ctrl Alt D): options sorted by value, one unrecognised.',r:ovScreen},
+];
+let cur=0;
+const $=id=>document.getElementById(id);
+function go(id){const i=S.findIndex(s=>s.id===id); if(i>=0){cur=i;render();}}
+function renderIndex(){
+  const grp=(g,lab)=>`<div class="grp"><span>${lab}</span>${S.map((s,i)=>s.g===g?`<button class="sw" data-i="${i}" aria-current="${i===cur}">${s.l}</button>`:'').join('')}</div>`;
+  $('index').innerHTML=`<p class="ttl">Lootwise, design 1: one screen</p>${grp('Window','Window')}${grp('Overlay','Over the game')}`;
+  $('hint').textContent=S[cur].h+'  Left and right arrows switch surface. Ctrl K opens the palette.';
+}
+function fit(){
+  const w=Math.min(1280,$('fit').clientWidth); const sc=w/1280;
+  $('stage').style.transform=`scale(${sc})`; $('fit').style.height=(800*sc)+'px';
+}
+function render(){
+  clearInterval(rlTimer);
+  $('stage').innerHTML=S[cur].r(); renderIndex(); fit(); wireChart();
+  if(S[cur].id==='ovl') startRate();
+  if(S[cur].id==='pal'){const q=$('q'); q.focus(); const items=[...document.querySelectorAll('.pal .it')]; let sel=0; items[0].setAttribute('aria-selected','true');
+    const mark=()=>{const vis=items.filter(b=>!b.hidden); items.forEach(b=>b.removeAttribute('aria-selected')); if(vis[sel]) {vis[sel].setAttribute('aria-selected','true');vis[sel].scrollIntoView({block:'nearest'});}};
+    q.addEventListener('input',()=>{const t=q.value.toLowerCase(); items.forEach(b=>b.hidden=!(b.dataset.n.toLowerCase().includes(t)||b.dataset.g.toLowerCase().includes(t))); document.querySelectorAll('.pal .g').forEach(g=>{let n=g.nextElementSibling,any=false;while(n&&!n.classList.contains('g')){if(!n.hidden)any=true;n=n.nextElementSibling;} g.hidden=!any;}); sel=0; mark();});
+    q.addEventListener('keydown',e=>{const vis=items.filter(b=>!b.hidden); if(e.key==='ArrowDown'){sel=Math.min(vis.length-1,sel+1);mark();e.preventDefault();} else if(e.key==='ArrowUp'){sel=Math.max(0,sel-1);mark();e.preventDefault();} else if(e.key==='Enter'){const n=(vis[sel]||{dataset:{}}).dataset.n; route(n);} else if(e.key==='Escape'){go('main');}e.stopPropagation();});
+    items.forEach(b=>b.addEventListener('click',()=>route(b.dataset.n)));
+  }
+}
+function route(n){ const m={'Settings':'set','Hotkeys':'set','Relay status':'set','Plugins':'set','Check for updates':'set','Switch League':'pop','Choose stash tabs':'pop','Sign in with GGG':'signin','Sign out':'signedout'}; go(m[n]||'main'); }
+document.addEventListener('click',e=>{
+  const sw=e.target.closest('.sw'); if(sw){cur=+sw.dataset.i;render();return;}
+  const g=e.target.closest('[data-go]'); if(g){go(g.dataset.go);return;}
+  const a=e.target.closest('[data-act]'); if(a){ const k=a.dataset.act;
+    if(k==='range') range=a.dataset.v; if(k==='seg') view=a.dataset.v; if(k==='unp') unpOpen=!unpOpen; render(); }
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT') return;
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();go('pal');return;}
+  if(e.key==='Escape'){ if(['pal','pop','set'].includes(S[cur].id)) go('main'); return; }
+  if(e.key==='ArrowRight'){cur=(cur+1)%S.length;render();}
+  if(e.key==='ArrowLeft'){cur=(cur+S.length-1)%S.length;render();}
+});
+window.addEventListener('resize',fit);
+if(location.hash){const i=S.findIndex(x=>x.id===location.hash.slice(1)); if(i>=0)cur=i;}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lootwise · Design 3 · Session companion</title>
+<style>
+@font-face{font-family:"Inter";font-weight:400;font-style:normal;font-display:swap;src:url(assets/inter-400.ttf) format("truetype")}
+@font-face{font-family:"Inter";font-weight:500;font-style:normal;font-display:swap;src:url(assets/inter-500.ttf) format("truetype")}
+@font-face{font-family:"Inter";font-weight:600;font-style:normal;font-display:swap;src:url(assets/inter-600.ttf) format("truetype")}
+:root{
+  /* true-black-flat, cool-monitor ground: elevation by lightness only */
+  --ground:#0b0c0e; --surface:#15171a; --raised:#22252a; --raised-2:#2c3036;
+  --border:#1a1c20; --rule:#1a1c20; --control:#444a52;
+  --text:#fff; --muted:#b4b4b4; --faint:#949494;
+  --accent:#c6f24e; --positive:#c6f24e; --negative:#e5484d; --warning:#e5a93b;
+  --pill-warning-bg:#2b2414; --pill-warning-ink:#e5a93b;
+  --pill-negative-bg:#2c1a20; --pill-negative-ink:#e5566f;
+  --pill-neutral-bg:#22252a;
+  --radius-card:20px; --gap:14px; --pad:22px;
+  --font:"Inter",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#050506;color:var(--text);font-family:var(--font);font-size:14px;line-height:1.4;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #fff;outline-offset:2px}
+a{color:inherit}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .faint{color:var(--faint)}
+
+/* ---------- page chrome: surface switcher ---------- */
+.deck{max-width:1320px;margin:0 auto;padding:14px 20px 0}
+.deck-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;min-height:34px}
+.deck-row+.deck-row{margin-top:6px}
+.deck button{height:30px;padding:0 13px;border-radius:999px;color:var(--muted);font-size:13px;font-weight:500;white-space:nowrap}
+.deck button:hover{color:#fff}
+.deck button[aria-pressed=true]{background:#fff;color:#000}
+.deck .grp button[aria-pressed=true]{background:var(--raised-2);color:#fff}
+.deck .grp button[aria-pressed=true].sub{background:#fff;color:#000}
+.deck .hint{margin-left:auto;color:var(--faint);font-size:12px}
+.stagewrap{max-width:1320px;margin:12px auto 40px;padding:0 20px}
+.fit{width:1280px;height:800px;transform-origin:0 0}
+.fitbox{width:1280px;height:800px;position:relative;overflow:hidden}
+
+/* ---------- window ---------- */
+.win{width:1280px;height:800px;background:var(--ground);border-radius:12px;overflow:hidden;position:relative;display:flex;flex-direction:column;border:1px solid #1c1f24}
+.titlebar{height:32px;flex:none;display:flex;align-items:center;padding:0 14px;color:var(--faint);font-size:12px;background:#08090a}
+.titlebar .ctl{margin-left:auto;display:flex;gap:18px;align-items:center}
+.titlebar .ctl i{display:block;width:10px;height:10px;border:1px solid var(--faint);border-radius:2px}
+.titlebar .ctl i:first-child{border:0;border-top:1px solid var(--faint);height:0;margin-top:8px;border-radius:0}
+.titlebar .ctl i:last-child{border:0;position:relative}
+.titlebar .ctl i:last-child:before,.titlebar .ctl i:last-child:after{content:"";position:absolute;left:4px;top:-1px;width:1px;height:12px;background:var(--faint);transform:rotate(45deg)}
+.titlebar .ctl i:last-child:after{transform:rotate(-45deg)}
+.app{flex:1;display:flex;min-height:0}
+.side{width:210px;flex:none;border-right:1px solid var(--rule);display:flex;flex-direction:column;padding:0 12px 16px}
+.brand{height:64px;display:flex;align-items:center;gap:10px;padding:0 10px;border-bottom:1px solid var(--rule);margin:0 -12px 16px;padding-left:22px}
+.brand .mark{width:24px;height:24px;flex:none}
+.brand b{font-size:16px;font-weight:600;letter-spacing:0}
+.nav{display:flex;flex-direction:column;gap:0}
+.nav button{height:34px;text-align:left;padding:0 10px;color:#bbb;font-size:14px;font-weight:500;border-radius:8px;display:flex;align-items:center;justify-content:space-between}
+.nav button:hover{color:#fff}
+.nav button[aria-current=page]{color:#fff}
+.nav .count{font-size:12px;color:var(--faint);font-weight:400}
+.side .spacer{flex:1}
+.acct{padding:10px;font-size:12px;color:var(--faint);line-height:1.5}
+.acct b{display:block;color:var(--muted);font-weight:500;font-size:13px}
+.acct .pip{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:1px}
+.acct .pip.warn{background:var(--warning)}
+.acct .pip.off{background:var(--control)}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:64px;flex:none;border-bottom:1px solid var(--rule);display:flex;align-items:center;padding:0 0 0 29px}
+.topbar h1{font-size:20px;font-weight:600;letter-spacing:0;white-space:nowrap}
+.topbar .sub{color:var(--muted);font-size:14px;margin-left:14px;white-space:nowrap}
+.topbar .grow{flex:1}
+.topbar .acts{display:flex;align-items:center;gap:10px;padding-right:20px}
+.topbar .scope{height:64px;border-left:1px solid var(--rule);display:flex;flex-direction:column;justify-content:center;padding:0 22px;min-width:190px}
+.scope small{font-size:12px;color:var(--faint)}
+.scope span{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px}
+.chev{width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);margin-top:-3px}
+.canvas{flex:1;min-height:0;padding:20px 29px 24px;overflow:hidden;position:relative}
+.canvas.scroll{overflow-y:auto}
+.canvas.scroll::-webkit-scrollbar{width:8px}.canvas.scroll::-webkit-scrollbar-thumb{background:var(--raised-2);border-radius:4px}
+
+/* ---------- controls ---------- */
+.btn{height:36px;padding:0 18px;border-radius:999px;font-weight:500;font-size:14px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn.primary{background:#fff;color:#000}
+.btn.primary:hover{background:#e6e6e6}
+.btn.second{background:var(--raised);color:#fff}
+.btn.second:hover{background:var(--raised-2)}
+.btn.ghost{color:var(--muted)} .btn.ghost:hover{color:#fff}
+.btn.sm{height:30px;padding:0 14px;font-size:13px}
+.seg{display:inline-flex;background:var(--raised);border-radius:999px;padding:3px;gap:2px}
+.seg button{height:30px;padding:0 16px;border-radius:999px;color:var(--muted);font-size:13px;font-weight:500}
+.seg button[aria-pressed=true]{background:var(--raised-2);color:#fff}
+.pill{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:500;background:var(--pill-neutral-bg);color:#fff;white-space:nowrap}
+.pill.warn{background:var(--pill-warning-bg);color:var(--pill-warning-ink)}
+.pill.bad{background:var(--pill-negative-bg);color:var(--pill-negative-ink)}
+.chk{width:18px;height:18px;border-radius:5px;background:var(--raised-2);flex:none;position:relative;display:inline-block}
+.chk.on{background:#fff}
+.chk.on:after{content:"";position:absolute;left:6px;top:2.5px;width:5px;height:9px;border-right:2px solid #000;border-bottom:2px solid #000;transform:rotate(40deg)}
+.sw{width:34px;height:20px;border-radius:999px;background:var(--raised-2);position:relative;flex:none;display:inline-block}
+.sw:after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--muted)}
+.sw.on{background:#fff}.sw.on:after{left:17px;background:#000}
+.key{display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:7px;background:var(--raised-2);font-size:13px;font-weight:500}
+.select{height:36px;border-radius:999px;background:var(--raised);padding:0 16px;display:inline-flex;align-items:center;gap:12px;font-weight:500;font-size:14px}
+.card{background:var(--surface);border-radius:var(--radius-card);padding:var(--pad)}
+.lab{font-size:14px;color:var(--muted)}
+.rule{height:1px;background:var(--rule)}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--raised-2);border-top-color:#fff;animation:sp .9s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.bar{height:6px;border-radius:999px;background:var(--raised-2);overflow:hidden}
+.bar i{display:block;height:100%;background:#e6e6e6;border-radius:999px}
+.bar i.lime{background:var(--accent)}
+
+/* ---------- Session (the glance view) ---------- */
+.hero{display:grid;grid-template-columns:1fr 1px 342px;gap:0;padding:0;height:312px}
+.hero .big{padding:26px 30px;display:flex;flex-direction:column;min-width:0}
+.hero .rail{background:var(--rule);margin:26px 0}
+.hero .side3{padding:22px 0 22px 30px;display:flex;flex-direction:column;justify-content:space-between}
+.fig-label{font-size:14px;color:var(--muted)}
+.hero-fig{font-size:132px;line-height:1;font-weight:600;letter-spacing:-.02em;color:var(--accent);margin-top:auto;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hero-fig small{font-size:36px;font-weight:500;letter-spacing:0;color:var(--muted);margin-left:12px}
+.hero-sub{font-size:16px;color:var(--muted);margin-top:14px}
+.hero-sub b{color:#fff;font-weight:500}
+.m3 .v{font-size:44px;font-weight:600;line-height:1.05;font-variant-numeric:tabular-nums;white-space:nowrap}
+.m3 .v small{font-size:18px;font-weight:500;color:var(--muted);margin-left:6px}
+.m3 .s{font-size:13px;color:var(--faint);margin-top:2px}
+.m3 .v.pos{color:#fff}
+.chartcard{margin-top:var(--gap);padding:18px 22px 14px;display:flex;flex-direction:column}
+.chead{display:flex;align-items:baseline;gap:14px}
+.chead h2{font-size:16px;font-weight:600}
+.chead .r{margin-left:auto;display:flex;align-items:center;gap:12px}
+.banner{display:flex;align-items:center;gap:14px;padding:12px 18px;border-radius:14px;background:var(--pill-warning-bg);color:var(--pill-warning-ink);font-weight:500;margin-bottom:var(--gap)}
+.banner span.t{flex:1;color:#f0c66e}
+.banner .btn{flex:none}
+.banner.bad{background:var(--pill-negative-bg)}.banner.bad span.t{color:#f08a9b}
+
+/* ---------- history, snapshots, tables ---------- */
+.row2{display:grid;gap:var(--gap)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{font-weight:400;color:var(--faint);font-size:12px;text-align:left;height:34px;padding:0 10px;white-space:nowrap}
+td{height:38px;padding:0 10px;border-top:1px solid var(--rule);font-size:14px;white-space:nowrap}
+th.r,td.r{text-align:right}
+td.name{white-space:normal}
+td .sm{font-size:12px;color:var(--faint);margin-left:8px}
+tr.sel td{background:var(--raised)}
+.slist button{width:100%;text-align:left;display:flex;justify-content:space-between;align-items:center;height:52px;padding:0 14px;border-radius:12px;color:var(--muted)}
+.slist button:hover{background:var(--raised)}
+.slist button[aria-pressed=true]{background:var(--raised);color:#fff}
+.slist .t{font-weight:500;font-size:14px}
+.slist .d{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums;text-align:right}
+.slist .v{font-variant-numeric:tabular-nums;text-align:right;font-weight:500}
+.barrow{display:grid;grid-template-columns:150px 1fr 120px;align-items:center;gap:16px;height:44px;border-top:1px solid var(--rule)}
+.barrow:first-child{border-top:0}
+.tablewrap{overflow-y:auto}
+.tablewrap::-webkit-scrollbar{width:8px}.tablewrap::-webkit-scrollbar-thumb{background:var(--raised-2);border-radius:4px}
+thead th{position:sticky;top:0;background:var(--surface);z-index:1}
+
+/* ---------- settings / setup ---------- */
+.set{display:grid;grid-template-columns:300px 1fr;gap:28px;padding:22px 0;border-top:1px solid var(--rule)}
+.set:first-child{border-top:0;padding-top:0}
+.set h3{font-size:16px;font-weight:600}
+.set p{color:var(--muted);font-size:14px;margin-top:4px}
+.ctl-row{display:flex;align-items:center;gap:12px;min-height:36px;flex-wrap:wrap}
+.ctl-row+.ctl-row{margin-top:10px}
+.ctl-row .grow{flex:1;min-width:0}
+.ctl-row .t{font-weight:500}
+.ctl-row .d{font-size:13px;color:var(--faint)}
+.step{display:grid;grid-template-columns:36px 1fr;gap:6px 14px;padding:22px 0;border-top:1px solid var(--rule)}
+.step:first-child{border-top:0;padding-top:0}
+.step .n{width:28px;height:28px;border-radius:50%;background:var(--raised);display:grid;place-items:center;font-weight:600;font-size:13px}
+.step .n.done{background:#fff;color:#000}
+.step h3{font-size:16px;font-weight:600;line-height:28px}
+.step .body{grid-column:2}
+.step p{color:var(--muted)}
+.tabs-list{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+.tabs-list label{display:flex;align-items:center;gap:12px;height:42px;border-top:1px solid var(--rule);cursor:pointer}
+.tabs-list .d{margin-left:auto;font-size:12px;color:var(--faint)}
+
+/* ---------- game stand-in + overlay ---------- */
+.game{width:1280px;height:800px;position:relative;overflow:hidden;border-radius:12px;background:#17120e}
+.game>svg{position:absolute;inset:0}
+.ov{position:absolute;width:320px;background:var(--surface);border-radius:16px;padding:18px 18px 14px;border:1px solid #2a2d33;color:#fff}
+.ov .price{display:flex;align-items:baseline;gap:10px;line-height:1}
+.ov .price b{font-size:52px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ov .price b small{font-size:22px;font-weight:500;color:var(--muted);margin-left:6px;letter-spacing:0}
+.ov .price .alt{margin-left:auto;font-size:16px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ov .iname{font-size:14px;font-weight:500;margin-top:12px}
+.ov .imeta{font-size:12px;color:var(--faint);margin-top:2px}
+.ov .facts{font-size:12px;color:var(--muted);margin-top:10px;font-variant-numeric:tabular-nums}
+.ov .trend{display:flex;align-items:center;gap:12px;margin-top:12px;font-size:12px;color:var(--muted)}
+.ov .trend b{color:#fff;font-weight:500;font-variant-numeric:tabular-nums}
+.ov .foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:11px;border-top:1px solid var(--rule);font-size:12px;color:var(--faint)}
+.ov .foot a{color:var(--muted);text-decoration:none}
+.ov .foot a:hover{color:#fff}
+.ov .why{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.45}
+.ov .dash{color:var(--faint)}
+.ov .flt{margin-top:14px;border-top:1px solid var(--rule)}
+.ov .flt .f{display:flex;align-items:center;gap:10px;height:36px;border-bottom:1px solid var(--rule);font-size:13px}
+.ov .flt .f .l{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ov .flt .f.off .l{color:var(--faint)}
+.ov .flt .f.off .v{color:var(--faint)}
+.ov .flt .v{width:52px;height:26px;border-radius:7px;background:var(--raised);text-align:right;padding:0 8px;line-height:26px;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;flex:none}
+.ov .flt .f.dim{opacity:.45}
+.ov .go{margin-top:14px;display:flex;gap:10px;align-items:center}
+.ov .go .btn{flex:1;justify-content:center}
+.opt{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;padding:11px 12px;border-radius:12px}
+.opt.first{background:var(--raised)}
+.opt .g{font-size:14px;font-weight:500}
+.opt .p{font-size:24px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;line-height:1.1}
+.opt .p small{font-size:13px;font-weight:500;color:var(--muted);margin-left:4px}
+.opt .s{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+.opt .s2{font-size:12px;color:var(--faint);text-align:right;font-variant-numeric:tabular-nums}
+.opt.none .p{color:var(--faint)}
+.opt+.opt{margin-top:2px}
+.opt.first .p{font-size:36px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.cap{position:absolute;left:480px;bottom:70px;font-size:12px;color:#8a7d6f}
+</style>
+</head>
+<body>
+<div class="deck" id="deck" aria-label="Surfaces"></div>
+<div class="stagewrap"><div class="fitbox" id="fitbox"><div class="fit" id="fit"><div id="view"></div></div></div></div>
+
+<script>
+/* =============== DATA (prices: Allflame relay mirror, poe.ninja / Currency Exchange) =============== */
+const DIV = 502.5;                         // chaos per divine: 1 / exchange-Currency rates.divine (0.00199)
+const TIMES = ['18:14','18:24','18:34','18:44','18:54','19:04'];
+const ITEMS = [ // tab, name, unit chaos, quantity at each of the 6 Snapshots
+  ['Currency','Divine Orb',502.5,[3,3,4,4,5,5]],
+  ['Currency','Exalted Orb',5.16,[120,131,140,152,167,181]],
+  ['Currency','Stacked Deck',7.19,[30,30,33,35,36,38]],
+  ['Currency','Gemcutter\u2019s Prism',4.62,[40,41,43,44,47,49]],
+  ['Currency','Orb of Scouring',1.33,[210,224,231,250,262,280]],
+  ['Currency','Chaos Orb',1,[1450,1530,1610,1720,1790,1880]],
+  ['Scarabs','Horned Scarab of Preservation',604,[0,0,1,1,1,2]],
+  ['Scarabs','Horned Scarab of Bloodlines',118.6,[2,2,3,3,4,4]],
+  ['Scarabs','Harvest Scarab of Cornucopia',60.48,[6,7,7,9,10,11]],
+  ['Scarabs','Cartography Scarab of Risk',43.76,[8,9,11,12,13,15]],
+  ['Delirium','Essence of Delirium',115.4,[1,2,2,3,3,3]],
+  ['Delirium','Golden Oil',311.6,[0,0,0,1,1,1]],
+  ['Gems','Pact of Beidat 20/20c',1005,[0,0,0,0,1,1]],
+  ['Gems','Soulrend of Reaping 20/20c',150,[1,1,1,1,1,1]],
+  ['Uniques','Voidforge, Infernal Sword',24371,[1,1,1,1,1,1]],
+];
+const TABS = ['Currency','Scarabs','Delirium','Gems','Uniques'];
+const UNPRICED = [ // rares are never priced in Snapshots
+  ['Uniques','Rare Sorcerer Boots',3],['Uniques','Rare Vaal Regalia',2],['Uniques','Rare Hubris Circlet',1],
+  ['Gems','Rare Cobalt Jewel',4],['Delirium','Rare Ruby Ring',2],['Scarabs','Rare Heavy Belt',2]];
+const UNPRICED_N = UNPRICED.reduce((s,r)=>s+r[2],0);
+const snap = i => {
+  const rows = ITEMS.map(([tab,name,unit,q])=>({tab,name,unit,qty:q[i],value:Math.round(q[i]*unit)})).filter(r=>r.qty>0);
+  const byTab = TABS.map(t=>({tab:t,items:rows.filter(r=>r.tab===t).length,value:rows.filter(r=>r.tab===t).reduce((s,r)=>s+r.value,0)}));
+  return {i,time:TIMES[i],rows,byTab,total:rows.reduce((s,r)=>s+r.value,0)};
+};
+const SNAPS = TIMES.map((_,i)=>snap(i));
+SNAPS.forEach(s=>console.assert(s.total===s.byTab.reduce((a,t)=>a+t.value,0),'tab sum = snapshot total'));
+const FIRST = SNAPS[0], LAST = SNAPS[5];
+const MEASURED_MIN = 50;                                   // 18:14 -> 19:04, first to last Snapshot
+const DELTA = LAST.total - FIRST.total;                    // chaos, from the totals as shown
+const PERHOUR = Math.round(DELTA / (MEASURED_MIN/60));     // chaos per hour
+const n0 = v => Math.round(v).toLocaleString('en-US');
+const d1 = c => (c/DIV).toFixed(1);
+const sign = v => (v>=0?'+':'\u2212')+n0(Math.abs(v));
+const signd = c => (c>=0?'+':'\u2212')+(Math.abs(c)/DIV).toFixed(1);
+// League history (sample): last Snapshot of each day; last point is today's 19:04 Snapshot
+const DAYS = ['Oct 29','Oct 30','Oct 31','Nov 1','Nov 2','Nov 3','Nov 4','Nov 5','Nov 6','Nov 7','Nov 8','Nov 9'];
+const HIST = [0.16,0.23,0.30,0.29,0.41,0.49,0.56,0.64,0.71,0.80,0.93].map(f=>Math.round(FIRST.total*f/100)*100).concat([LAST.total]);
+const PAST = [ // sample sessions: measured minutes between first and last Snapshot, net worth change in chaos
+  {start:'Nov 8, 20:02',min:160,snaps:17,delta:21480,note:''},
+  {start:'Nov 7, 19:30',min:90,snaps:10,delta:7240,note:''},
+  {start:'Nov 6, 21:10',min:70,snaps:8,delta:null,note:'Tabs differ'},
+];
+console.assert(LAST.total-FIRST.total===DELTA);
+
+/* =============== helpers =============== */
+const mark = `<svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20 L3 4 L8 4 L8 15 L21 15 L21 20 Z" fill="#c6f24e"/></svg>`;
+const niceTicks = (lo,hi,n=4)=>{ const raw=(hi-lo)/n; const p=Math.pow(10,Math.floor(Math.log10(raw))); const m=[1,2,2.5,5,10].find(x=>x*p>=raw)*p; const a=Math.floor(lo/m)*m, ticks=[]; for(let v=a;v<=hi+m;v+=m){ticks.push(v); if(v>=hi)break;} return ticks; };
+
+function lineChart({w,h,pts,xDomain,xTicks,yLabel,ref,markNext,lastDot=true,yUnit='div',padL=52,padB=26,padT=10,padR=18}){
+  const xs=pts.map(p=>p.x), ys=pts.map(p=>p.y);
+  const yt=niceTicks(Math.min(...ys,ref?ref.y:Infinity),Math.max(...ys),3);
+  const y0=yt[0], y1=yt[yt.length-1];
+  const X=x=>padL+(x-xDomain[0])/(xDomain[1]-xDomain[0])*(w-padL-padR);
+  const Y=y=>padT+(1-(y-y0)/(y1-y0))*(h-padT-padB);
+  let s=`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${yLabel}">`;
+  yt.forEach(v=>{ s+=`<line x1="${padL}" x2="${w-padR}" y1="${Y(v)}" y2="${Y(v)}" stroke="#22252a"/><text x="${padL-10}" y="${Y(v)+4}" text-anchor="end" fill="#949494" font-size="12" font-family="Inter" style="font-variant-numeric:tabular-nums">${yUnit==='div'?Math.round(v/DIV):n0(v)}</text>`;});
+  s+=`<line x1="${padL}" x2="${w-padR}" y1="${Y(y0)}" y2="${Y(y0)}" stroke="#444a52" stroke-width="1"/>`;
+  xTicks.forEach(t=>{ s+=`<text x="${X(t.x)}" y="${h-6}" text-anchor="${t.a||'middle'}" fill="#949494" font-size="12" font-family="Inter" style="font-variant-numeric:tabular-nums">${t.l}</text>`;});
+  if(ref){ s+=`<line x1="${X(xDomain[0])}" x2="${w-padR}" y1="${Y(ref.y)}" y2="${Y(ref.y)}" stroke="#6b6b6b" stroke-dasharray="4 4"/><text x="${w-padR}" y="${Y(ref.y)+(ref.below?16:-6)}" text-anchor="end" fill="#949494" font-size="12" font-family="Inter">${ref.l}</text>`; }
+  if(markNext){ s+=`<line x1="${X(markNext.x)}" x2="${X(markNext.x)}" y1="${padT}" y2="${h-padB}" stroke="#444a52" stroke-dasharray="3 4"/>`; }
+  s+=`<polyline fill="none" stroke="#c6f24e" stroke-width="2.5" stroke-linejoin="round" points="${pts.map(p=>X(p.x)+','+Y(p.y)).join(' ')}"/>`;
+  if(lastDot){ const p=pts[pts.length-1]; s+=`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="5" fill="#c6f24e"/>`; }
+  s+='</svg>'; return {svg:s,X,Y};
+}
+// Session strip: one tick on the time axis for every Snapshot
+function sessionChart(){
+  const pts=SNAPS.map((s,i)=>({x:i*10,y:s.total}));
+  const w=968,h=272,padL=52,padR=18,padB=26;
+  const c=lineChart({w,h,pts,xDomain:[0,60],xTicks:[0,10,20,30,40,50,60].map(m=>({x:m,l:m===60?'19:14':TIMES[m/10]||''})),yLabel:'Net worth this Session in divines',ref:{y:FIRST.total,l:'Net worth at 18:14: '+d1(FIRST.total)+' div',below:true},markNext:{x:60}});
+  let ticks='';
+  pts.forEach(p=>{ ticks+=`<line x1="${c.X(p.x)}" x2="${c.X(p.x)}" y1="${h-padB}" y2="${h-padB+6}" stroke="#fff" stroke-width="2"/>`; });
+  return c.svg.replace('</svg>',ticks+`<text x="${c.X(60)-8}" y="22" text-anchor="end" fill="#949494" font-size="12" font-family="Inter">Next Snapshot</text></svg>`);
+}
+function leagueChart(){
+  const pts=HIST.map((v,i)=>({x:i,y:v}));
+  const w=1012-44,h=250;
+  const c=lineChart({w,h,pts,xDomain:[0,11],xTicks:DAYS.map((d,i)=>({x:i,l:i%2===0||i===11?d:'',a:i===0?'start':i===11?'end':'middle'})),yLabel:'Net worth at the last Snapshot of each day, in divines'});
+  return c.svg;
+}
+function trend7(data,w=150,h=30){
+  const lo=Math.min(...data),hi=Math.max(...data);
+  const X=i=>2+i/(data.length-1)*(w-4), Y=v=>2+(1-(v-lo)/(hi-lo||1))*(h-4);
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="7-day trend"><polyline fill="none" stroke="#c6f24e" stroke-width="2" stroke-linejoin="round" points="${data.map((v,i)=>X(i)+','+Y(v)).join(' ')}"/></svg>`;
+}
+
+/* =============== shell =============== */
+function win({nav,title,sub='',acts='',scope=true,body,scroll=false,acct='on',relay='ok',navCounts}){
+  const relayTxt = relay==='ok'?'Prices updated 9 min ago':relay==='stale'?'Prices 3 h 12 min old':'Checking prices\u2026';
+  return `<div class="win">
+  <div class="titlebar"><span>Lootwise</span><span class="ctl" aria-hidden="true"><i></i><i></i><i></i></span></div>
+  <div class="app">
+   <aside class="side" aria-label="Main navigation">
+    <div class="brand">${mark}<b>Lootwise</b></div>
+    <nav class="nav">
+      <button data-go="session" ${nav==='session'?'aria-current="page"':''}>Session</button>
+      <button data-go="history" ${nav==='history'?'aria-current="page"':''}>History</button>
+    </nav>
+    <div class="spacer"></div>
+    <nav class="nav"><button data-go="settings" ${nav==='settings'?'aria-current="page"':''}>Settings</button></nav>
+    <div class="acct">${acct==='on'?`<b><span class="pip"></span>Signed in</b>Sign-in ends in 6 h 12 min`:acct==='off'?`<b><span class="pip warn"></span>Signed out</b>Price Check still works`:`<b><span class="pip off"></span>Not signed in</b>Price Check works without it`}</div>
+   </aside>
+   <section class="main">
+    <header class="topbar"><h1>${title}</h1>${sub?`<span class="sub">${sub}</span>`:''}<span class="grow"></span>
+      <div class="acts">${acts}</div>
+      ${scope?`<div class="scope"><small>League</small><span>Allflame <i class="chev"></i></span></div><div class="scope" style="min-width:190px"><small>Prices</small><span style="font-weight:400;font-size:13px;color:${relay==='stale'?'var(--warning)':'var(--muted)'}">${relayTxt}</span></div>`:''}
+    </header>
+    <div class="canvas ${scroll?'scroll':''}">${body}</div>
+   </section>
+  </div></div>`;
+}
+
+/* =============== window surfaces =============== */
+const SESSION_ACTS = `<button class="btn second sm" data-act="snap">Take Snapshot now</button><button class="btn primary" data-act="stop">Stop Session</button>`;
+
+function heroBlock(mode){
+  // mode: ok | warn | load | stale
+  if(mode==='warn') return `<div class="card hero">
+    <div class="big"><div class="fig-label">Earnings per hour</div>
+      <div class="hero-fig" style="color:var(--warning);font-size:96px">No figure</div>
+      <div class="hero-sub" style="max-width:560px"><b>The Snapshots cover different stash tabs.</b> The Uniques tab is in the 19:04 Snapshot but not in the 18:14 one, so its ${n0(LAST.byTab[4].value)} chaos would count as income.</div>
+    </div><div class="rail"></div>
+    <div class="side3 m3">${m3('Elapsed','<span class="clk">0:52:08</span>','Started 18:14')}${m3('Net worth now',d1(LAST.total)+'<small>div</small>',n0(LAST.total)+' chaos, 19:04 Snapshot')}${m3('Last Snapshot','19:04','2 min ago \u00b7 next at 19:14')}</div></div>`;
+  if(mode==='load') return `<div class="card hero">
+    <div class="big"><div class="fig-label">Earnings per hour</div>
+      <div class="hero-fig" style="color:var(--faint);font-weight:400">\u2014<small>div / h</small></div>
+      <div class="hero-sub" style="display:flex;align-items:center;gap:12px"><span class="spin"></span><b>Taking the 19:14 Snapshot</b> \u00b7 reading tab 3 of 5</div>
+      <div class="bar" style="margin-top:14px;width:420px"><i style="width:60%"></i></div>
+    </div><div class="rail"></div>
+    <div class="side3 m3">${m3('Elapsed','<span class="clk">0:52:08</span>','Started 18:14')}${m3('Net worth change','\u2014','Waiting for the Snapshot')}${m3('Last Snapshot','19:04','Previous one, 2 min ago')}</div></div>`;
+  const delta = DELTA;
+  return `<div class="card hero">
+    <div class="big"><div class="fig-label">Earnings per hour</div>
+      <div class="hero-fig">${d1(PERHOUR)}<small>div / h</small></div>
+      <div class="hero-sub"><b>${n0(PERHOUR)}</b> chaos per hour \u00b7 measured over ${MEASURED_MIN} min, 18:14 to 19:04</div>
+    </div><div class="rail"></div>
+    <div class="side3 m3">${m3('Elapsed','<span class="clk">0:52:08</span>','Started 18:14')}
+      ${m3('Net worth change','<span style="color:var(--positive)">'+signd(delta)+'</span><small>div</small>',sign(delta)+' chaos since the 18:14 Snapshot')}
+      ${m3('Last Snapshot','19:04','2 min ago \u00b7 next at 19:14')}</div></div>`;
+}
+const m3=(l,v,s)=>`<div><div class="fig-label">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+
+function chartCard(mode){
+  if(mode==='load') return `<div class="card chartcard" style="flex:1"><div class="chead"><h2>Net worth this Session</h2><span class="r"><span class="faint">Waiting for the 19:14 Snapshot</span></span></div><div style="flex:1;display:grid;place-items:center;color:var(--faint)">${sessionChart().replace(/stroke="#c6f24e"/g,'stroke="#444a52"').replace(/fill="#c6f24e"/g,'fill="#444a52"')}</div></div>`;
+  return `<div class="card chartcard" style="flex:1"><div class="chead"><h2>Net worth this Session</h2><span class="r"><span class="lab"><b class="num" style="color:#fff;font-weight:600">${d1(LAST.total)} div</b> \u00b7 ${n0(LAST.total)} chaos</span><span class="faint">${UNPRICED_N} unpriced items not counted</span></span></div>${sessionChart()}</div>`;
+}
+
+function sessionBody(mode='ok',banner=''){
+  return `<div style="height:100%;display:flex;flex-direction:column">${banner}${heroBlock(mode)}${chartCard(mode)}</div>`;
+}
+const VIEWS = {};
+VIEWS.session = () => win({nav:'session',title:'Session',sub:'Allflame \u00b7 running since 18:14',acts:SESSION_ACTS,body:sessionBody()});
+VIEWS.stale = () => win({nav:'session',title:'Session',sub:'Allflame \u00b7 running since 18:14',acts:SESSION_ACTS,relay:'stale',
+  body:sessionBody('ok',`<div class="banner"><span class="pill warn">Prices are stale</span><span class="t">The price relay is unreachable. Lootwise is using prices from 3 h 12 min ago; new Snapshots are valued with them.</span><button class="btn second sm" data-act="retry">Try again</button></div>`)});
+VIEWS.signedout = () => win({nav:'session',title:'Session',sub:'Allflame \u00b7 paused at 19:04',acct:'off',acts:`<button class="btn primary" data-go="signin">Sign in with GGG</button>`,
+  body:sessionBody('ok',`<div class="banner bad"><span class="pill bad">Signed out</span><span class="t">Your GGG sign-in ended at 19:02. Snapshots are paused; sign in again to carry the Session on. Price Check still works.</span></div>`).replace('2 min ago \u00b7 next at 19:14','4 min ago \u00b7 paused')});
+VIEWS.loading = () => win({nav:'session',title:'Session',sub:'Allflame \u00b7 running since 18:14',acts:SESSION_ACTS.replace('Take Snapshot now','Taking Snapshot\u2026').replace('class="btn second sm"','class="btn second sm" disabled style="opacity:.5"'),body:sessionBody('load')});
+VIEWS.warning = () => win({nav:'session',title:'Session',sub:'Allflame \u00b7 running since 18:14',acts:`<button class="btn second sm" data-go="snapshot">Compare Snapshots</button><button class="btn primary" data-act="stop">Start a new Session</button>`,
+  body:sessionBody('warn')});
+
+VIEWS.firstrun = () => win({nav:'session',title:'Session',sub:'No Session yet',acct:'none',scope:true,acts:'',body:`
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);align-items:start">
+   <div class="card" style="display:flex;flex-direction:column;padding:34px">
+     <div class="fig-label">Earnings per hour</div>
+     <div class="hero-fig" style="color:var(--faint);margin-top:18px;font-weight:400">\u2014<small>div / h</small></div>
+     <p class="hero-sub" style="max-width:420px">Start a Session and Lootwise measures what you earn between its first and last Snapshot, one Snapshot every 10 minutes.</p>
+     <div style="margin-top:34px;display:flex;gap:10px;align-items:center"><button class="btn primary" data-go="signin">Sign in with GGG to start</button></div>
+   </div>
+   <div class="card" style="padding:34px">
+     <h2 style="font-size:16px;font-weight:600">Set up</h2>
+     <div style="margin-top:14px">
+      <div class="ctl-row" style="min-height:52px"><span class="n chk on" style="border-radius:50%"></span><div class="grow"><div class="t">League</div><div class="d">Allflame, the current challenge League</div></div><button class="btn ghost sm" data-go="settings">Change</button></div>
+      <div class="rule"></div>
+      <div class="ctl-row" style="min-height:52px;margin-top:0"><span class="chk" style="border-radius:50%"></span><div class="grow"><div class="t">Sign in with GGG</div><div class="d">Only needed for wealth tracking. Opens your browser.</div></div></div>
+      <div class="rule"></div>
+      <div class="ctl-row" style="min-height:52px;margin-top:0"><span class="chk" style="border-radius:50%"></span><div class="grow"><div class="t">Stash tabs</div><div class="d">All except Remove-only tabs, chosen after you sign in</div></div></div>
+     </div>
+     <div class="rule" style="margin-top:14px"></div>
+     <p class="muted" style="margin-top:18px;max-width:440px">Price Check already works. Hover an item in the game and press <span class="key">Ctrl</span> <span class="key">D</span>.</p>
+   </div>
+  </div>`});
+
+VIEWS.signin = () => win({nav:'settings',title:'Set up wealth tracking',sub:'Allflame',scope:false,acts:`<button class="btn primary" data-go="session">Done</button>`,scroll:true,body:`
+  <div style="max-width:760px">
+   <div class="step"><div class="n done"></div><div><h3>League</h3></div><div class="body"><div class="ctl-row"><span class="select">Allflame <i class="chev"></i></span><span class="faint">Current challenge League, chosen for you</span></div></div></div>
+   <div class="step"><div class="n done"></div><div><h3>Signed in with GGG</h3></div><div class="body"><p>Lootwise reads your stash and nothing else. GGG ends the sign-in every 10 hours, so you will be asked again.</p><div class="ctl-row" style="margin-top:12px"><span class="pill">Signed in 12:55 \u00b7 ends 22:55</span><button class="btn ghost sm" data-act="x">Sign out</button></div></div></div>
+   <div class="step"><div class="n">3</div><div><h3>Stash tabs</h3></div><div class="body"><p>Net worth counts the ticked tabs. Remove-only tabs are off by default.</p>
+     <div class="tabs-list" id="tabs">${[['Currency',1,'Currency'],['Scarabs',1,'Normal'],['Delirium',1,'Normal'],['Gems',1,'Gem'],['Uniques',1,'Unique'],['Old stuff',0,'Remove-only']].map(([n,on,k])=>`<label><span class="chk ${on?'on':''}"></span>${n}<span class="d">${k}</span></label>`).join('')}</div>
+     <p class="faint" style="margin-top:12px;font-size:13px">5 of 6 tabs selected</p></div></div>
+  </div>`});
+
+VIEWS.history = () => {
+  const rows = PAST.map(p=>{ const h=p.delta==null?null:Math.round(p.delta/(p.min/60)); return `<tr><td>${p.start}</td><td class="r">${Math.floor(p.min/60)} h ${String(p.min%60).padStart(2,'0')} min</td><td class="r">${p.snaps}</td><td class="r">${p.delta==null?'<span class="pill warn">Tabs differ</span>':sign(p.delta)}</td><td class="r">${h==null?'<span class="faint">\u2014</span>':d1(h)+' <span class="faint">div / h</span>'}</td></tr>`; }).join('');
+  return win({nav:'history',title:'History',sub:'Allflame \u00b7 12 days',acts:`<div class="seg" role="group" aria-label="History view"><button aria-pressed="true">Net worth</button><button data-go="snapshot" aria-pressed="false">Snapshots</button></div>`,body:`
+   <div style="display:grid;gap:var(--gap)">
+    <div class="card" style="padding:18px 22px 12px"><div class="chead"><h2>Net worth, last Snapshot of each day</h2><span class="r"><span class="lab"><b class="num" style="color:#fff;font-weight:600">${d1(LAST.total)} div</b> now \u00b7 ${n0(LAST.total)} chaos</span></span></div>${leagueChart()}</div>
+    <div class="card" style="padding:14px 22px 10px"><div class="chead" style="margin-bottom:4px"><h2>Past Sessions</h2><span class="r faint">Earnings per hour is only shown when every Snapshot covers the same tabs</span></div>
+     <table><thead><tr><th>Started</th><th class="r">Measured over</th><th class="r">Snapshots</th><th class="r">Net worth change (chaos)</th><th class="r">Per hour</th></tr></thead><tbody>
+      <tr><td>Today, 18:14 <span class="pill" style="margin-left:8px">Running</span></td><td class="r">${MEASURED_MIN} min</td><td class="r">6</td><td class="r">${sign(DELTA)}</td><td class="r">${d1(PERHOUR)} <span class="faint">div / h</span></td></tr>${rows}</tbody></table></div>
+   </div>`});
+};
+
+let snapSel = 5, snapView = 'tab';
+VIEWS.snapshot = () => {
+  const s = SNAPS[snapSel];
+  const list = SNAPS.map((x,i)=>`<button data-snap="${i}" aria-pressed="${i===snapSel}"><span><span class="t">${x.time}</span><br><span class="d">${x.byTab.filter(t=>t.value>0).length} tabs</span></span><span><span class="v">${d1(x.total)} div</span><br><span class="d">${n0(x.total)} chaos</span></span></button>`).reverse().join('');
+  const maxTab = Math.max(...s.byTab.map(t=>t.value));
+  const byTab = s.byTab.slice().sort((a,b)=>b.value-a.value).map(t=>`<div class="barrow"><span>${t.tab} <span class="sm faint" style="font-size:12px;margin-left:6px">${t.items} ${t.items===1?'item':'items'}</span></span><div class="bar"><i style="width:${t.value/maxTab*100}%"></i></div><span class="num" style="text-align:right">${n0(t.value)} <span class="faint">c</span></span></div>`).join('');
+  const byItem = `<div class="tablewrap" style="max-height:282px"><table><thead><tr><th>Item</th><th>Tab</th><th class="r">Qty</th><th class="r">Unit (chaos)</th><th class="r">Value (chaos)</th></tr></thead><tbody>${s.rows.slice().sort((a,b)=>b.value-a.value).map(r=>`<tr><td class="name">${r.name}</td><td class="faint">${r.tab}</td><td class="r">${n0(r.qty)}</td><td class="r">${r.unit<10?r.unit.toFixed(2):r.unit%1?r.unit.toFixed(1):n0(r.unit)}</td><td class="r">${n0(r.value)}</td></tr>`).join('')}</tbody></table></div>`;
+  return win({nav:'history',title:'History',sub:'Allflame \u00b7 Snapshots',acts:`<div class="seg" role="group" aria-label="History view"><button data-go="history" aria-pressed="false">Net worth</button><button aria-pressed="true">Snapshots</button></div>`,body:`
+   <div style="display:grid;grid-template-columns:300px 1fr;gap:var(--gap);height:100%">
+    <div class="card slist" style="padding:12px;align-self:start">${list}</div>
+    <div class="card" style="padding:22px 24px;display:flex;flex-direction:column;min-height:0">
+      <div class="chead"><div><div class="fig-label">Snapshot at ${s.time}, covers ${TABS.length} tabs</div><div class="num" style="font-size:40px;font-weight:600;line-height:1.15;margin-top:2px">${d1(s.total)}<span style="font-size:18px;color:var(--muted);font-weight:500;margin-left:6px">div</span> <span style="font-size:18px;color:var(--muted);font-weight:500;margin-left:8px">${n0(s.total)} chaos</span></div></div>
+        <span class="r"><div class="seg" role="group"><button data-sv="tab" aria-pressed="${snapView==='tab'}">By tab</button><button data-sv="item" aria-pressed="${snapView==='item'}">By item</button></div></span></div>
+      <div style="margin-top:14px">${snapView==='tab'?byTab:byItem}</div>
+      <div class="rule" style="margin-top:12px"></div>
+      <div class="ctl-row" style="margin-top:12px"><span class="pill warn">${UNPRICED_N} unpriced</span><span class="muted grow">Rares are never priced, so they are not in the total.</span><span class="faint num" style="font-size:12px">Divine at 502.5 chaos</span></div>
+      ${snapView==='tab'?`<div style="margin-top:6px">${UNPRICED.map(u=>`<div class="barrow" style="grid-template-columns:1fr 150px 60px;height:36px"><span>${u[1]}</span><span class="faint">${u[0]}</span><span class="num faint" style="text-align:right">\u00d7${u[2]}</span></div>`).join('')}</div>`:''}
+    </div></div>`});
+};
+
+VIEWS.settings = () => win({nav:'settings',title:'Settings',scope:false,scroll:true,acts:'',body:`
+  <div style="max-width:980px">
+   <div class="set"><div><h3>Hotkeys</h3><p>Work while the game has focus.</p></div><div>
+     <div class="ctl-row"><div class="grow"><div class="t">Price Check</div><div class="d">Price the item under the cursor</div></div><span class="key">Ctrl</span><span class="key">D</span><button class="btn second sm">Record shortcut</button></div>
+     <div class="ctl-row"><div class="grow"><div class="t">Screen Price Check</div><div class="d">Price the gems at the Divine Font</div></div><span class="key">Ctrl</span><span class="key">Alt</span><span class="key">D</span><button class="btn second sm">Record shortcut</button></div></div></div>
+   <div class="set"><div><h3>Session</h3><p>How often a Session takes a Snapshot.</p></div><div>
+     <div class="ctl-row"><div class="grow"><div class="t">Snapshot interval</div></div><div class="seg" role="group" aria-label="Snapshot interval"><button aria-pressed="false">5 min</button><button aria-pressed="true">10 min</button><button aria-pressed="false">15 min</button><button aria-pressed="false">30 min</button></div></div></div></div>
+   <div class="set"><div><h3>Account</h3><p>GGG sign-in is only needed for wealth tracking.</p></div><div>
+     <div class="ctl-row"><div class="grow"><div class="t">Signed in</div><div class="d">Sign-in ends in 6 h 12 min, then you sign in again</div></div><button class="btn second sm" data-go="signin">Stash tabs</button><button class="btn ghost sm">Sign out</button></div>
+     <div class="ctl-row"><div class="grow"><div class="t">League</div></div><span class="select">Allflame <i class="chev"></i></span></div></div></div>
+   <div class="set"><div><h3>Prices</h3><p>Relayed from poe.ninja and the Currency Exchange.</p></div><div>
+     <div class="ctl-row"><div class="grow"><div class="t">Relay</div><div class="d">Updated 9 min ago \u00b7 refreshed every 15 min</div></div><span class="pill">Up to date</span></div>
+     <div class="ctl-row"><div class="grow"><div class="t">Divine Orb</div><div class="d">Exchange rate used for chaos and divine</div></div><span class="num">${DIV} chaos</span></div></div></div>
+   <div class="set"><div><h3>Plugins</h3><p>Third-party price sources and rules.</p></div><div>
+     <div class="ctl-row"><div class="grow"><div class="t muted">No Plugins installed</div><div class="d">Plugins arrive in a later release</div></div></div></div></div>
+   <div class="set"><div><h3>About</h3><p>Lootwise 0.1.0</p></div><div>
+     <div class="ctl-row"><div class="grow"><div class="t">Version 0.2.0 is available</div><div class="d">Nothing installs until you choose to</div></div><button class="btn second sm">Release notes</button></div>
+     <div class="ctl-row"><div class="grow"><div class="t">Launch at login, keep in tray</div></div><span class="sw on"></span></div></div></div>
+  </div>`});
+
+/* =============== overlay surfaces over a flat stand-in of the game =============== */
+function gameScene(cur){
+  // flat stand-in: warm dark ground, ruins shapes, an inventory panel with item blocks
+  const cells=[], ix=788, iy=330, cs=38;
+  let g='';
+  for(let r=0;r<5;r++)for(let c=0;c<12;c++) g+=`<rect x="${ix+c*cs}" y="${iy+r*cs}" width="${cs-2}" height="${cs-2}" fill="#1b1612"/>`;
+  const blocks=[[0,0,2,1,'#3a2f4a'],[2,0,1,1,'#4a3a22'],[3,0,1,1,'#2b3f5a'],[4,0,2,2,'#5a2b2b'],[0,1,1,2,'#2b3f5a'],[1,1,1,1,'#4a3a22'],[2,1,2,1,'#4a3a22'],[6,0,1,1,'#4a3a22'],[7,0,1,1,'#2b3f5a'],[8,0,1,1,'#4a3a22'],[9,0,3,1,'#5a2b2b'],[6,2,2,2,'#3a2f4a'],[0,3,1,1,'#4a3a22'],[1,3,1,1,'#4a3a22'],[2,3,2,2,'#2b3f5a'],[8,2,1,3,'#5a2b2b'],[9,2,1,1,'#2b3f5a'],[10,2,2,2,'#5a2b2b'],[4,4,3,1,'#4a3a22'],[9,3,1,1,'#4a3a22'],[0,4,2,1,'#3a2f4a']];
+  blocks.forEach(([c,r,w,h,col])=>{ g+=`<rect x="${ix+c*cs}" y="${iy+r*cs}" width="${w*cs-2}" height="${h*cs-2}" fill="${col}"/>`; });
+  const hx=ix+cur.c*cs, hy=iy+cur.r*cs;
+  g+=`<rect x="${hx-1}" y="${hy-1}" width="${cur.w*cs}" height="${cur.h*cs}" fill="none" stroke="#e9dcc2" stroke-width="2"/>`;
+  const cx=hx+cur.w*cs/2+8, cy=hy+cur.h*cs/2+8;
+  return {svg:`<svg width="1280" height="800" viewBox="0 0 1280 800" aria-hidden="true">
+   <rect width="1280" height="800" fill="#17120e"/>
+   <ellipse cx="300" cy="560" rx="360" ry="150" fill="#1d1712"/><ellipse cx="180" cy="300" rx="190" ry="80" fill="#1d1712"/>
+   <g fill="#241c15"><rect x="80" y="120" width="26" height="140"/><rect x="190" y="90" width="26" height="170"/><rect x="420" y="130" width="26" height="130"/><rect x="530" y="100" width="26" height="160"/><rect x="70" y="250" width="500" height="18"/></g>
+   <g fill="#0e0b09"><rect x="768" y="296" width="${12*cs+40}" height="${5*cs+78}" rx="6"/></g>
+   <text x="788" y="322" fill="#6f6252" font-size="13" font-family="Inter">Inventory</text>
+   <rect x="0" y="742" width="1280" height="58" fill="#0e0b09"/><circle cx="60" cy="771" r="26" fill="#5a2b2b"/><circle cx="1220" cy="771" r="26" fill="#2b3f5a"/>
+   ${[0,1,2,3,4].map(i=>`<rect x="${430+i*76}" y="750" width="52" height="42" fill="#1b1612"/>`).join('')}
+   ${g}
+   <path d="M${cx} ${cy} l0 22 l6 -5 l4 10 l4 -2 l-4 -10 l8 0 z" fill="#fff" stroke="#000" stroke-width="1"/>
+  </svg>`,cx,cy};
+}
+function ovStage(cur,cardHtml,pos,hint='Ctrl+D'){
+  const g=gameScene(cur);
+  return `<div class="game"><h1 class="sr">Lootwise Price Check overlay over the game</h1>${g.svg}${cardHtml.replace('<div class="ov"',`<div class="ov" style="left:${pos.left}px;top:${pos.top}px"`)}<div class="cap">${hint}</div></div>`;
+}
+const ovFoot = (extra='') => `<div class="foot"><a href="#" onclick="return false">poe.ninja \u2197</a><span>${extra||'Esc closes'}</span></div>`;
+
+const MB=100048, MBN=577;
+VIEWS['ov-commodity'] = () => ovStage({c:0,r:0,w:2,h:1},`
+ <div class="ov">
+  <div class="price"><b>${d1(MB)}<small>div</small></b></div>
+  <div class="price" style="margin-top:6px"><span class="alt" style="margin-left:0;font-size:16px">${n0(MB)} chaos</span></div>
+  <div class="iname">Mageblood</div><div class="imeta">Heavy Belt \u00b7 4 flasks</div>
+  <div class="facts">${MBN} listings \u00b7 high confidence \u00b7 9 min ago</div>
+  <div class="trend">${trend7([0,3.32,-1.1,1.55,21.05,29.3,40.43])}<span><b style="color:var(--positive)">+40.4%</b> in 7 days</span></div>
+  ${ovFoot()}
+ </div>`,{left:380,top:330});
+VIEWS['ov-low'] = () => ovStage({c:2,r:3,w:2,h:2},`
+ <div class="ov">
+  <div class="price"><b>${d1(146228)}<small>div</small></b></div>
+  <div class="price" style="margin-top:6px"><span class="alt" style="margin-left:0;font-size:16px">${n0(146228)} chaos</span></div>
+  <div style="margin-top:12px"><span class="pill warn">Low confidence</span></div>
+  <div class="why">Only 5 listings, and prices are 2 h 40 min old because the relay has not answered since 16:25.</div>
+  <div class="iname" style="margin-top:12px">Foulborn Cloak of Defiance</div><div class="imeta">Lacquered Garb \u00b7 Mana Shield</div>
+  <div class="trend"><span class="faint">7-day trend not available</span></div>
+  ${ovFoot()}
+ </div>`,{left:380,top:340});
+VIEWS['ov-rare'] = () => ovStage({c:4,r:2,w:2,h:2},`
+ <div class="ov" style="width:340px">
+  <div class="price"><b>3.5<small>div</small></b><span class="alt">1,759 chaos</span></div>
+  <div class="facts" style="margin-top:8px">Median of the 12 cheapest of 18 \u00b7 just now</div>
+  <div class="iname" style="margin-top:12px">Havoc Coil</div><div class="imeta">Sorcerer Boots \u00b7 rare \u00b7 item level 84</div>
+  <div class="flt">
+   <div class="f"><span class="chk on"></span><span class="l">Base type Sorcerer Boots</span><span class="faint" style="font-size:12px">fixed</span></div>
+   <div class="f"><span class="chk on"></span><span class="l">Item level at least</span><span class="v">84</span></div>
+   <div class="f"><span class="chk on"></span><span class="l">Total elemental resistance</span><span class="v">94</span></div>
+   <div class="f"><span class="chk on"></span><span class="l">Maximum life</span><span class="v">81</span></div>
+   <div class="f"><span class="chk on"></span><span class="l">Movement speed</span><span class="v">27</span></div>
+   <div class="f off"><span class="chk"></span><span class="l">Increased rarity of items</span><span class="v">\u2014</span></div>
+  </div>
+  <div class="go"><button class="btn primary">Open on trade site</button></div>
+  <div class="foot" style="border-top:0;margin-top:8px;padding-top:0"><span>Minimums are 90% of the roll</span><span>Esc closes</span></div>
+ </div>`,{left:380,top:290});
+VIEWS['ov-notcommodity'] = () => ovStage({c:0,r:3,w:1,h:1},`
+ <div class="ov">
+  <div class="price"><b class="dash" style="color:var(--faint)">\u2014</b></div>
+  <div class="iname" style="margin-top:14px">Not a Commodity Item</div><div class="imeta">Coral Ring \u00b7 magic</div>
+  <div class="why">Only currency, fragments, uniques and gems are valued from market data. Rare items get a Live Search instead; magic items are not priced.</div>
+  <div class="foot" style="margin-top:14px"><span></span><span>Esc closes</span></div>
+ </div>`,{left:420,top:420});
+VIEWS['ov-unavail'] = () => ovStage({c:6,r:0,w:1,h:1},`
+ <div class="ov">
+  <div class="price"><b style="color:var(--faint)">\u2014</b></div>
+  <div class="iname" style="margin-top:14px">Prices unavailable for this League</div><div class="imeta">Ruthless Allflame</div>
+  <div class="why">The price relay has no data for this League. Pick another League in Settings to price items again.</div>
+  <div class="foot" style="margin-top:14px"><span>Esc closes</span><span></span></div>
+ </div>`,{left:420,top:330});
+VIEWS['ov-rate'] = () => ovStage({c:4,r:2,w:2,h:2},`
+ <div class="ov" style="width:340px">
+  <div class="price"><b style="color:var(--faint)">8<small style="color:var(--faint)">s</small></b></div>
+  <div class="facts" style="margin-top:8px;color:var(--warning)">Rate-limited. Search again in 8 s.</div>
+  <div class="bar" style="margin-top:12px"><i style="width:60%"></i></div>
+  <div class="iname" style="margin-top:14px">Havoc Coil</div><div class="imeta">Sorcerer Boots \u00b7 rare \u00b7 item level 84</div>
+  <div class="flt">
+   <div class="f dim"><span class="chk on"></span><span class="l">Item level at least</span><span class="v">84</span></div>
+   <div class="f dim"><span class="chk on"></span><span class="l">Total elemental resistance</span><span class="v">94</span></div>
+   <div class="f dim"><span class="chk on"></span><span class="l">Maximum life</span><span class="v">81</span></div>
+  </div>
+  <div class="go"><button class="btn second" disabled style="opacity:.6">Search again in 8 s</button></div>
+  <div class="foot" style="border-top:0;margin-top:8px;padding-top:0"><span>Searches wait so your account is never throttled</span></div>
+ </div>`,{left:380,top:290});
+VIEWS['ov-screen'] = () => ovStage({c:6,r:2,w:2,h:2},`
+ <div class="ov" style="width:340px;padding-bottom:12px">
+  <div class="imeta" style="margin:0 0 8px 12px;font-size:13px">Divine Font, priced as <b style="color:#fff;font-weight:500">20/20 corrupted</b></div>
+  <div class="opt first"><span class="g">Pact of Beidat</span><span class="p">2.0<small>div</small></span><span class="s">Best option</span><span class="s2">1,005 chaos</span></div>
+  <div class="opt"><span class="g">Blight of Contagion</span><span class="p">1.0<small>div</small></span><span class="s2" style="grid-column:1/3;text-align:left">502.5 chaos</span></div>
+  <div class="opt"><span class="g">Arc of Oscillating</span><span class="p">0.9<small>div</small></span><span class="s2" style="grid-column:1/3;text-align:left">452.5 chaos</span></div>
+  <div class="opt none"><span class="g">Unrecognised</span><span class="p">\u2014</span><span class="s2" style="grid-column:1/3;text-align:left">Not priced, could be misread</span></div>
+  <div class="foot" style="margin:10px 12px 0"><span>Offered: Soulrend of Reaping</span><span>Esc closes</span></div>
+ </div>`,{left:460,top:290},'Ctrl+Alt+D');
+
+/* =============== surface registry + deck =============== */
+const SURFACES = [
+  ['Window','session','Session'],['Window','history','History'],['Window','snapshot','Snapshot'],['Window','settings','Settings'],
+  ['Setup','signin','Sign-in and tabs'],['Setup','firstrun','First run'],
+  ['Overlay','ov-commodity','Price'],['Overlay','ov-low','Low confidence'],['Overlay','ov-rare','Rare, Live Search'],['Overlay','ov-notcommodity','Not a Commodity Item'],['Overlay','ov-unavail','League unavailable'],['Overlay','ov-rate','Rate-limited'],['Overlay','ov-screen','Screen Price Check'],
+  ['States','stale','Relay stale'],['States','signedout','Signed out'],['States','loading','Loading'],['States','warning','Tabs differ'],
+];
+const ROUTE = {session:'Window',history:'Window',snapshot:'Window',settings:'Window',signin:'Setup',firstrun:'Setup'};
+let cur = 'session';
+function deck(){
+  const groups=[...new Set(SURFACES.map(s=>s[0]))];
+  const g=SURFACES.find(s=>s[1]===cur)[0];
+  document.getElementById('deck').innerHTML=
+   `<div class="deck-row grp">${groups.map(x=>`<button data-grp="${x}" aria-pressed="${x===g}">${x}</button>`).join('')}<span class="hint">\u2190 \u2192 switch surface \u00b7 Lootwise design 3, optimised for the second monitor</span></div>
+    <div class="deck-row grp">${SURFACES.filter(s=>s[0]===g).map(s=>`<button class="sub" data-s="${s[1]}" aria-pressed="${s[1]===cur}">${s[2]}</button>`).join('')}</div>`;
+}
+function show(id){
+  if(!VIEWS[id]) return; cur=id; history.replaceState(null,'','#'+id);
+  document.getElementById('view').innerHTML=VIEWS[id](); deck(); fitWin(); tick(true);
+}
+function fitWin(){
+  const box=document.getElementById('fitbox'), fit=document.getElementById('fit');
+  const k=Math.min(1,(box.parentElement.clientWidth-40)/1280);
+  fit.style.transform=`scale(${k})`; box.style.width=1280*k+'px'; box.style.height=800*k+'px';
+}
+let t0=Date.now();
+function tick(first){
+  const s=3128+Math.floor((Date.now()-t0)/1000);
+  const f=`${Math.floor(s/3600)}:${String(Math.floor(s/60)%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  document.querySelectorAll('.clk').forEach(e=>e.textContent=f);
+}
+setInterval(tick,1000);
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-s],[data-grp],[data-go],[data-snap],[data-sv],#tabs label,[data-act]'); if(!b) return;
+  if(b.dataset.s) show(b.dataset.s);
+  else if(b.dataset.grp) show(SURFACES.find(s=>s[0]===b.dataset.grp)[1]);
+  else if(b.dataset.go) show(b.dataset.go);
+  else if(b.dataset.snap){snapSel=+b.dataset.snap;show('snapshot');}
+  else if(b.dataset.sv){snapView=b.dataset.sv;show('snapshot');}
+  else if(b.matches('#tabs label')){e.preventDefault();b.querySelector('.chk').classList.toggle('on');const n=document.querySelectorAll('#tabs .chk.on').length;b.closest('.body').lastElementChild.textContent=n+' of 6 tabs selected';}
+  else if(b.dataset.act==='stop'){show('firstrun');}
+  else if(b.dataset.act==='retry'){show('session');}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft') return;
+  const i=SURFACES.findIndex(s=>s[1]===cur); const n=(i+(e.key==='ArrowRight'?1:-1)+SURFACES.length)%SURFACES.length;
+  show(SURFACES[n][1]);
+});
+window.addEventListener('resize',fitWin);
+show((location.hash||'#session').slice(1)||'session');
+document.fonts&&document.fonts.ready.then(()=>{fitWin();});
+</script>
+</body>
+</html>
