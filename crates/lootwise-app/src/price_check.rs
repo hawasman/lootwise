@@ -43,12 +43,14 @@ pub enum CardContent {
     Failed(String),
 }
 
-/// Where the card is: its rect in global points, as the overlay last laid it out, and the
-/// display's scale then.
+/// Where the card is: its rect in global points, as the overlay last laid it out, the
+/// display's scale then, and the anchor it was laid out beside. Bounds laid out for another
+/// anchor are a previous card's.
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct CardBounds {
     rect: [f32; 4],
     scale: f32,
+    anchor: Option<(i32, i32)>,
 }
 
 /// The overlay's state.
@@ -174,27 +176,35 @@ fn watch_pointer(s: &mut PriceCheckOverlay, clock: f64, tx: &mut Tx) -> bool {
     let Some(pointer) = s.pointer.pointer() else {
         return false;
     };
-    let pressed = pointer.pressed && s.was_pressed == Some(false);
+    let just_pressed = pointer.pressed && s.was_pressed == Some(false);
     s.was_pressed = Some(pointer.pressed);
-    if s.bounds
-        .is_some_and(|card| player_left(card, pointer, pressed))
-    {
+    // During a Price Check its card is about to replace this one wherever the pointer went.
+    if s.copy.is_busy() {
+        return false;
+    }
+    let card = s.bounds.filter(|b| b.anchor == s.anchor);
+    if card.is_some_and(|card| player_left(card, pointer, just_pressed)) {
         s.hide();
         return true;
     }
     false
 }
 
-/// Whether the player has left the card: pressed a mouse button outside it (`pressed`: a
-/// button went down since the last sample), or moved the pointer beyond [`LEAVE_DISTANCE`].
-fn player_left(card: CardBounds, pointer: Pointer, pressed: bool) -> bool {
-    let scale = if card.scale > 0.0 { card.scale } else { 1.0 };
-    let (px, py) = (pointer.at.0 as f32 / scale, pointer.at.1 as f32 / scale);
+/// Whether the player has left the card: pressed a mouse button outside it (`just_pressed`:
+/// a button went down since the last sample), or moved the pointer beyond [`LEAVE_DISTANCE`].
+fn player_left(card: CardBounds, pointer: Pointer, just_pressed: bool) -> bool {
+    let (px, py) = to_points(pointer.at, card.scale);
     let [x, y, w, h] = card.rect;
     let dx = (x - px).max(px - (x + w)).max(0.0);
     let dy = (y - py).max(py - (y + h)).max(0.0);
     let distance = dx.hypot(dy);
-    distance > LEAVE_DISTANCE || (pressed && distance > 0.0)
+    distance > LEAVE_DISTANCE || (just_pressed && distance > 0.0)
+}
+
+/// Global desktop pixels as global points, at the display's `scale` (1 when unknown).
+fn to_points((x, y): (i32, i32), scale: f32) -> (f32, f32) {
+    let scale = if scale > 0.0 { scale } else { 1.0 };
+    (x as f32 / scale, y as f32 / scale)
 }
 
 /// The overlay's keys, once it has them: Esc closes the card, everything else passes.
@@ -210,12 +220,12 @@ pub fn on_key(s: &mut PriceCheckOverlay, ev: &KeyEvent, _: &mut Tx) -> bool {
 /// display. `pointer` is in global desktop pixels; `screen` is the overlay's global rect in
 /// points (zero before its first layout, when no clamping happens).
 fn card_origin(pointer: Option<(i32, i32)>, scale: f32, screen: [f32; 4]) -> (f32, f32) {
-    let Some((px, py)) = pointer else {
+    let Some(pointer) = pointer else {
         return (POINTER_GAP, POINTER_GAP);
     };
-    let scale = if scale > 0.0 { scale } else { 1.0 };
-    let x = px as f32 / scale - screen[0] + POINTER_GAP;
-    let y = py as f32 / scale - screen[1] + POINTER_GAP;
+    let (px, py) = to_points(pointer, scale);
+    let x = px - screen[0] + POINTER_GAP;
+    let y = py - screen[1] + POINTER_GAP;
     let clamp = |v: f32, room: f32| {
         if room > 0.0 {
             v.min(room).max(0.0)
@@ -380,8 +390,8 @@ pub fn view(s: &PriceCheckOverlay, cx: &mut Cx<PriceCheckOverlay>) -> El {
     let Some(card) = &s.card else { return root };
     let k = Kit::neutral(true);
     let (accent, body) = card_body(card, &k);
-    let scale = cx.env().scale;
-    let (x, y) = card_origin(s.anchor, scale, s.screen);
+    let (scale, anchor) = (cx.env().scale, s.anchor);
+    let (x, y) = card_origin(anchor, scale, s.screen);
     let card = rune_kit::Card::new().accent(accent).child(body).build(&k);
     root.child(
         el().key("card")
@@ -393,7 +403,11 @@ pub fn view(s: &PriceCheckOverlay, cx: &mut Cx<PriceCheckOverlay>) -> El {
             .hit()
             // Where the player's pointer is measured from, to close the card once they leave.
             .on_screen_layout(move |s: &mut PriceCheckOverlay, rect| {
-                s.bounds = Some(CardBounds { rect, scale });
+                s.bounds = Some(CardBounds {
+                    rect,
+                    scale,
+                    anchor,
+                });
             })
             // A click hands the card the keyboard, so Esc reaches it.
             .on_press(|s: &mut PriceCheckOverlay| {
@@ -877,6 +891,33 @@ mod tests {
             card_origin(Some((2320, 300)), 1.0, [1920.0, 0.0, 1920.0, 1080.0]),
             (416.0, 316.0),
             "on a display right of the primary"
+        );
+    }
+
+    #[test]
+    fn a_card_far_from_the_last_one_is_not_closed_by_it() {
+        let clipboard = rune::clipboard::memory();
+        let (mut rt, mouse, copies) = watched(&clipboard, UNIQUE);
+        press_ctrl_d(&mut rt);
+
+        // Straight to an item across the screen, before a sample sees the pointer leave.
+        mouse.at.set((1500, 900));
+        copies.set(DIVINE);
+        press_ctrl_d(&mut rt);
+        assert_eq!(text_of(&rt, "item-name").as_deref(), Some("Divine Orb"));
+
+        rt.key(KeyEvent {
+            key: Key::Escape,
+            mods: Mods::default(),
+        });
+        run(&mut rt, 0.5);
+        mouse.at.set((300, 200));
+        copies.set(UNIQUE);
+        press_ctrl_d(&mut rt);
+        assert_eq!(
+            text_of(&rt, "item-name").as_deref(),
+            Some("Kaom's Heart"),
+            "after the last card was closed far away"
         );
     }
 

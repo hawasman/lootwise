@@ -39,7 +39,7 @@ pub trait KeySender {
 pub struct Pointer {
     /// Where it is, in global desktop pixels.
     pub at: (i32, i32),
-    /// Whether a mouse button (left, right, middle or a side button) is held down.
+    /// Whether the left, right or middle mouse button is held down.
     pub pressed: bool,
 }
 

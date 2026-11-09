@@ -52,14 +52,14 @@ impl PointerLocator for SystemPointer {
     fn pointer(&mut self) -> Option<Pointer> {
         use windows::Win32::Foundation::POINT;
         use windows::Win32::UI::Input::KeyboardAndMouse::{
-            GetAsyncKeyState, VK_LBUTTON, VK_MBUTTON, VK_RBUTTON, VK_XBUTTON1, VK_XBUTTON2,
+            GetAsyncKeyState, VK_LBUTTON, VK_MBUTTON, VK_RBUTTON,
         };
         use windows::Win32::UI::WindowsAndMessaging::GetCursorPos;
 
         let mut at = POINT::default();
         // SAFETY: `at` is a valid, writable POINT for the call's duration.
         unsafe { GetCursorPos(&mut at) }.ok()?;
-        let pressed = [VK_LBUTTON, VK_RBUTTON, VK_MBUTTON, VK_XBUTTON1, VK_XBUTTON2]
+        let pressed = [VK_LBUTTON, VK_RBUTTON, VK_MBUTTON]
             .into_iter()
             // SAFETY: GetAsyncKeyState takes any virtual-key code and has no other inputs.
             // The high bit is set while the button is down.
