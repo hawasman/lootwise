@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "league": "Standard",
+  "updatedAt": "2026-11-09T12:35:39.614Z",
+  "categories": {
+    "exchange-Currency": {
+      "status": 304,
+      "ok": true,
+      "fetchedAt": "2026-11-09T12:35:38.455Z",
+      "attemptedAt": "2026-11-09T12:35:38.455Z",
+      "etag": "fb4ca8c10a8b9ea74d585a1fefdc3ab9",
+      "upstreamEtag": "W/c422852117fb63eebd4e4aece4a6cbc1"
+    },
+    "exchange-Scarab": {
+      "status": 304,
+      "ok": true,
+      "fetchedAt": "2026-11-09T12:35:38.853Z",
+      "attemptedAt": "2026-11-09T12:35:38.853Z",
+      "etag": "916870e0632738fa29e3d01b0e9bce77",
+      "upstreamEtag": "W/ba3f5d0d671f092eac019c9dd174b96c"
+    },
+    "exchange-DivinationCard": {
+      "status": 304,
+      "ok": true,
+      "fetchedAt": "2026-11-09T12:35:38.771Z",
+      "attemptedAt": "2026-11-09T12:35:38.771Z",
+      "etag": "5bbfaab6caf57998ad717afd1c3f6a00",
+      "upstreamEtag": "W/b00a5949f8b2bed9fcd95e71808573c3"
+    },
+    "currency-Currency": {
+      "status": 304,
+      "ok": true,
+      "fetchedAt": "2026-11-09T12:35:39.506Z",
+      "attemptedAt": "2026-11-09T12:35:39.506Z",
+      "etag": "a8c18575084456381d8b2c5535f48d45",
+      "upstreamEtag": "W/6eeeaa03e07dae49a397dc3906c2463a"
+    },
+    "item-SkillGem": {
+      "status": 304,
+      "ok": true,
+      "fetchedAt": "2026-11-09T12:35:39.179Z",
+      "attemptedAt": "2026-11-09T12:35:39.179Z",
+      "etag": "1cce055abb63f87099110ca861873306",
+      "upstreamEtag": "W/1786eaf9e2ec7c893dc8454cba704ffa"
+    },
+    "item-UniqueArmour": {
+      "status": 304,
+      "ok": true,
+      "fetchedAt": "2026-11-09T12:35:39.038Z",
+      "attemptedAt": "2026-11-09T12:35:39.038Z",
+      "etag": "e8744a179e62d7e5e595a299f0fc04e4",
+      "upstreamEtag": "W/dac9855ff1472a8b3b877c6beed5132a"
+    }
+  }
+}

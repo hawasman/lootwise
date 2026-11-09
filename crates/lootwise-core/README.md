@@ -33,7 +33,7 @@ What a relay-backed `PriceFeed` reads from `v1/{league}/` (see `relay/README.md`
 | `listing_count` | `listingCount` on `item-*` lines, `receive.listing_count` on `currency-*` lines; `None` for `exchange-*` lines, which report `volumePrimaryValue` instead |
 | `divine_rate` | `1 / core.rates.divine` of an `exchange-*` file (poe.ninja gives divine per chaos), or `chaosEquivalent` of `Divine Orb` in `currency-Currency` |
 | `SkillGem { name, level, quality, corrupted }` | `item-SkillGem` `name`, `gemLevel`, `gemQuality`, `corrupted` (`null` means not corrupted) |
-| `Unique { name, base_type }` | `item-Unique*` `name` and `baseType`. poe.ninja splits some uniques into rows by `links` and mod `variant`, which the key doesn't carry, so the adapter must pick one row per key deterministically. |
-| `Currency`/`Fragment`/`Scarab`/`Essence`/`DivinationCard { name }` | the `exchange-*` file's `items[].name`, joined to `lines[]` by `id`; `primaryValue` is in chaos |
+| `Unique { name, base_type }` | `item-Unique*` `name` and `baseType`. poe.ninja splits some uniques into rows by `links` and mod `variant`, which the key doesn't carry, so the adapter must pick one row per key deterministically. `lootwise-sources` picks the unlinked row, then the most listed, then the cheapest. |
+| `Currency`/`Fragment`/`Scarab`/`Essence`/`DivinationCard { name }` | the `exchange-*` file's `items[].name`, joined to `lines[]` by `id`; `primaryValue` is in chaos. Names missing from the exchange fall back to `currency-*` `chaosEquivalent` and `item-Vial`/`item-Incubator` `chaosValue`. |
 
 Tests drive the engine API only, with fake ports and real clipboard fixtures in `tests/fixtures/`.

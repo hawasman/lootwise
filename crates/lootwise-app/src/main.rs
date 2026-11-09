@@ -1,10 +1,20 @@
 //! Lootwise: a tray app whose Ctrl+D runs a Price Check of the item under the pointer in
-//! Path of Exile and shows its header in an overlay beside the pointer.
+//! Path of Exile and shows its Valuation in an overlay beside the pointer.
+//!
+//! Configuration, from the environment:
+//! - `LOOTWISE_RELAY` (required): the price relay's base URL, or a local mirror folder made by
+//!   `pnpm dev:mirror` (ADR 0004).
+//! - `LOOTWISE_LEAGUE`: the League to price in, as poe.ninja names it; `Standard` by default.
+//! - `LOOTWISE_CACHE`: where downloaded prices are kept; the platform data dir by default.
 
-mod header;
 mod price_check;
 
+use std::path::PathBuf;
+use std::time::SystemTime;
+
+use lootwise_core::{Clock, Engine, League};
 use lootwise_input::EnigoInput;
+use lootwise_sources::{RelayFeed, RelaySource, default_cache_dir};
 use price_check::PriceCheckOverlay;
 use rune::{
     App, AppSpec, Cx, DisplayTarget, El, KeyPolicy, OverlayHandle, OverlayInput, OverlayOptions,
@@ -46,7 +56,42 @@ fn coin_icon() -> TrayIcon {
     TrayIcon::rgba(SIZE, SIZE, pixels)
 }
 
+struct SystemClock;
+
+impl Clock for SystemClock {
+    fn now(&self) -> SystemTime {
+        SystemTime::now()
+    }
+}
+
+/// The engine bound to the configured League and relay, or why it can't be built.
+fn pricer() -> Result<price_check::Pricer, String> {
+    let relay = std::env::var("LOOTWISE_RELAY").map_err(|_| {
+        "set LOOTWISE_RELAY to the price relay's URL or a `pnpm dev:mirror` folder".to_owned()
+    })?;
+    let source = RelaySource::parse(&relay).map_err(|e| e.to_string())?;
+    let league =
+        League::new(std::env::var("LOOTWISE_LEAGUE").unwrap_or_else(|_| "Standard".into()));
+    let cache = std::env::var_os("LOOTWISE_CACHE")
+        .map(PathBuf::from)
+        .or_else(default_cache_dir)
+        .ok_or("no data dir for the price cache; set LOOTWISE_CACHE")?;
+    eprintln!(
+        "lootwise: pricing in {} from {source}, cached in {}",
+        league.name(),
+        cache.display()
+    );
+    let feed = RelayFeed::start(source, cache, league.clone())
+        .map_err(|e| format!("can't start the price feed: {e}"))?;
+    let engine = Engine::new(feed, SystemClock);
+    Ok(Box::new(move |text| engine.price_check(&league, text)))
+}
+
 fn main() {
+    let pricer = pricer().unwrap_or_else(|e| {
+        eprintln!("lootwise: {e}");
+        std::process::exit(2);
+    });
     let input = || Box::new(EnigoInput::new());
     let mut app = App::new(AppSpec::new(
         "Lootwise",
@@ -70,7 +115,7 @@ fn main() {
         })
         .poll(price_check::poll)
         .on_key(price_check::on_key),
-        PriceCheckOverlay::new(input(), input()),
+        PriceCheckOverlay::new(input(), input(), pricer),
     );
     let surface = overlay.clone();
     overlay.update(move |s, _| s.attach(surface));

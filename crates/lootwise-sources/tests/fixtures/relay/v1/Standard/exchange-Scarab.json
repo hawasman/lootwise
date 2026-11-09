@@ -1,0 +1,55 @@
+{
+ "core": {
+  "items": [
+   {
+    "id": "chaos",
+    "name": "Chaos Orb",
+    "image": "/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwic2NhbGUiOjF9XQ/46a2347805/CurrencyRerollRare.png",
+    "category": "Currency",
+    "detailsId": "chaos-orb"
+   },
+   {
+    "id": "divine",
+    "name": "Divine Orb",
+    "image": "/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lNb2RWYWx1ZXMiLCJzY2FsZSI6MX1d/ec48896769/CurrencyModValues.png",
+    "category": "Currency",
+    "detailsId": "divine-orb"
+   }
+  ],
+  "rates": {
+   "divine": 0.001659
+  },
+  "primary": "chaos",
+  "secondary": "divine"
+ },
+ "lines": [
+  {
+   "id": "abyss-scarab-of-descending",
+   "primaryValue": 17,
+   "volumePrimaryValue": 2.83,
+   "maxVolumeCurrency": "chaos",
+   "maxVolumeRate": 0.05882,
+   "sparkline": {
+    "totalChange": 224.7,
+    "data": [
+     12.89,
+     -4.49,
+     -4.49,
+     33.71,
+     8.7,
+     -24.09,
+     224.7
+    ]
+   }
+  }
+ ],
+ "items": [
+  {
+   "id": "abyss-scarab-of-descending",
+   "name": "Abyss Scarab of Descending",
+   "image": "/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvU2NhcmFicy9UaWVyNFNjYXJhYkFieXNzIiwic2NhbGUiOjF9XQ/c1d1da69d6/Tier4ScarabAbyss.png",
+   "category": "Fragments",
+   "detailsId": "abyss-scarab-of-descending"
+  }
+ ]
+}

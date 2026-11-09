@@ -1,0 +1,20 @@
+[package]
+name = "lootwise-sources"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "Lootwise price sources: the relay-backed PriceFeed (ADR 0004)."
+publish = false
+
+[dependencies]
+lootwise-core = { path = "../lootwise-core" }
+dirs = "6"
+humantime = "2.2"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "time"] }
+
+[dev-dependencies]
+tempfile = "3"
+tiny_http = "0.12"

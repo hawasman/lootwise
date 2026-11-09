@@ -1,0 +1,144 @@
+{
+ "lines": [
+  {
+   "currencyTypeName": "Divine Orb",
+   "pay": {
+    "id": 0,
+    "league_id": 1,
+    "pay_currency_id": 3,
+    "get_currency_id": 1,
+    "sample_time_utc": "2026-11-09T12:08:42.7434865Z",
+    "count": 78,
+    "value": 0.00167,
+    "data_point_count": 1,
+    "includes_secondary": false,
+    "listing_count": 3604
+   },
+   "receive": {
+    "id": 0,
+    "league_id": 1,
+    "pay_currency_id": 1,
+    "get_currency_id": 3,
+    "sample_time_utc": "2026-11-09T12:08:42.7434865Z",
+    "count": 5,
+    "value": 600.0,
+    "data_point_count": 1,
+    "includes_secondary": false,
+    "listing_count": 1728
+   },
+   "paySparkLine": {
+    "totalChange": 0,
+    "data": [
+     0,
+     0,
+     1.21,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "receiveSparkLine": {
+    "totalChange": 96.08,
+    "data": [
+     0,
+     7.84,
+     -49.67,
+     -49.67,
+     -18.3,
+     -10.13,
+     96.08
+    ]
+   },
+   "chaosEquivalent": 598.8,
+   "lowConfidencePaySparkLine": {
+    "totalChange": 0,
+    "data": [
+     0,
+     0,
+     1.21,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "lowConfidenceReceiveSparkLine": {
+    "totalChange": 96.08,
+    "data": [
+     0,
+     7.84,
+     -49.67,
+     -49.67,
+     -18.3,
+     -10.13,
+     96.08
+    ]
+   },
+   "detailsId": "divine-orb"
+  },
+  {
+   "currencyTypeName": "Orb of Horizons",
+   "receive": {
+    "id": 0,
+    "league_id": 1,
+    "pay_currency_id": 1,
+    "get_currency_id": 75,
+    "sample_time_utc": "2026-11-09T12:08:42.7434865Z",
+    "count": 58,
+    "value": 0.3333,
+    "data_point_count": 1,
+    "includes_secondary": true,
+    "listing_count": 967
+   },
+   "paySparkLine": {
+    "totalChange": 0,
+    "data": []
+   },
+   "receiveSparkLine": {
+    "totalChange": 14.59,
+    "data": [
+     0,
+     0.13,
+     -38.08,
+     -37.9,
+     -4.6,
+     4.94,
+     14.59
+    ]
+   },
+   "chaosEquivalent": 0.33,
+   "lowConfidencePaySparkLine": {
+    "totalChange": 0,
+    "data": []
+   },
+   "lowConfidenceReceiveSparkLine": {
+    "totalChange": 14.59,
+    "data": [
+     0,
+     0.13,
+     -38.08,
+     -37.9,
+     -4.6,
+     4.94,
+     14.59
+    ]
+   },
+   "detailsId": "orb-of-horizons"
+  }
+ ],
+ "currencyDetails": [
+  {
+   "id": 1,
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lSZXJvbGxSYXJlIiwidyI6MSwiaCI6MSwic2NhbGUiOjF9XQ/d119a0d734/CurrencyRerollRare.png",
+   "name": "Chaos Orb",
+   "tradeId": "chaos"
+  },
+  {
+   "id": 2,
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/b102771c23/CurrencyAddModToRare.png",
+   "name": "Exalted Orb",
+   "tradeId": "exalted"
+  }
+ ]
+}

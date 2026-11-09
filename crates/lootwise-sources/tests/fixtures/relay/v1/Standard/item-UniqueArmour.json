@@ -1,0 +1,594 @@
+{
+ "lines": [
+  {
+   "id": 135519,
+   "name": "Foulborn Ghostwrithe",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9HaG9zdHdlYXZlIiwidyI6MiwiaCI6Mywic2NhbGUiOjEsIm11dGF0ZWQiOnRydWV9XQ/cacbc0765b/Ghostweave.png",
+   "levelRequired": 11,
+   "baseType": "Silken Vest",
+   "variant": "Chaos Recoup, Life to Shield",
+   "links": 5,
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": 0,
+    "data": []
+   },
+   "explicitModifiers": [
+    {
+     "text": "+(100-200) to maximum Energy Shield",
+     "optional": false
+    },
+    {
+     "text": "+(51-100) to maximum Life",
+     "optional": false
+    }
+   ],
+   "mutatedModifiers": [
+    {
+     "text": "50% of Chaos Damage taken Recouped as Life",
+     "optional": false
+    },
+    {
+     "text": "Your Maximum Energy Shield is Equal to (35-50)% of Your Maximum Life",
+     "optional": false
+    }
+   ],
+   "flavourText": "Faith springs abundant at the edge of death.",
+   "itemType": "Body Armour",
+   "chaosValue": 1036475,
+   "exaltedValue": 129884,
+   "divineValue": 1720,
+   "count": 3,
+   "detailsId": "foulborn-ghostwrithe-chaos-recoup-life-to-shield-silken-vest-5l",
+   "tradeInfo": [
+    {
+     "mod": "explicit.stat_2485226576",
+     "min": 0,
+     "max": 0
+    },
+    {
+     "mod": "explicit.stat_4053338379",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "listingCount": 31
+  },
+  {
+   "id": 135518,
+   "name": "Foulborn Ghostwrithe",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9HaG9zdHdlYXZlIiwidyI6MiwiaCI6Mywic2NhbGUiOjEsIm11dGF0ZWQiOnRydWV9XQ/cacbc0765b/Ghostweave.png",
+   "levelRequired": 11,
+   "baseType": "Silken Vest",
+   "variant": "Chaos Recoup, Life to Shield",
+   "links": 6,
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": 164.0,
+    "data": [
+     null,
+     0,
+     3.49,
+     1826,
+     2356,
+     2197,
+     164.0
+    ]
+   },
+   "explicitModifiers": [
+    {
+     "text": "+(103-199) to maximum Energy Shield",
+     "optional": false
+    },
+    {
+     "text": "+(52-99) to maximum Life",
+     "optional": false
+    }
+   ],
+   "mutatedModifiers": [
+    {
+     "text": "50% of Chaos Damage taken Recouped as Life",
+     "optional": false
+    },
+    {
+     "text": "Your Maximum Energy Shield is Equal to (35-50)% of Your Maximum Life",
+     "optional": false
+    }
+   ],
+   "flavourText": "Faith springs abundant at the edge of death.",
+   "itemType": "Body Armour",
+   "chaosValue": 24104,
+   "exaltedValue": 3021,
+   "divineValue": 40.0,
+   "count": 12,
+   "detailsId": "foulborn-ghostwrithe-chaos-recoup-life-to-shield-silken-vest-6l",
+   "tradeInfo": [
+    {
+     "mod": "explicit.stat_2485226576",
+     "min": 0,
+     "max": 0
+    },
+    {
+     "mod": "explicit.stat_4053338379",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "listingCount": 35
+  },
+  {
+   "id": 135108,
+   "name": "Foulborn Ghostwrithe",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9HaG9zdHdlYXZlIiwidyI6MiwiaCI6Mywic2NhbGUiOjEsIm11dGF0ZWQiOnRydWV9XQ/cacbc0765b/Ghostweave.png",
+   "levelRequired": 11,
+   "baseType": "Silken Vest",
+   "variant": "Life to Shield",
+   "links": 5,
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": -10.67,
+    "data": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     0,
+     -10.67
+    ]
+   },
+   "explicitModifiers": [
+    {
+     "text": "+(101-199) to maximum Energy Shield",
+     "optional": false
+    },
+    {
+     "text": "+(50-100) to maximum Life",
+     "optional": false
+    },
+    {
+     "text": "+50% to Chaos Resistance",
+     "optional": false
+    }
+   ],
+   "mutatedModifiers": [
+    {
+     "text": "Your Maximum Energy Shield is Equal to (35-50)% of Your Maximum Life",
+     "optional": false
+    }
+   ],
+   "flavourText": "Faith springs abundant at the edge of death.",
+   "itemType": "Body Armour",
+   "chaosValue": 20006,
+   "exaltedValue": 2507,
+   "divineValue": 33.2,
+   "count": 5,
+   "detailsId": "foulborn-ghostwrithe-life-to-shield-silken-vest-5l",
+   "tradeInfo": [
+    {
+     "mod": "explicit.stat_4053338379",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "listingCount": 34
+  },
+  {
+   "id": 135756,
+   "name": "Foulborn Ghostwrithe",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9HaG9zdHdlYXZlIiwidyI6MiwiaCI6Mywic2NhbGUiOjEsIm11dGF0ZWQiOnRydWV9XQ/cacbc0765b/Ghostweave.png",
+   "levelRequired": 11,
+   "baseType": "Silken Vest",
+   "variant": "Chaos Recoup",
+   "links": 6,
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": 0,
+    "data": []
+   },
+   "explicitModifiers": [
+    {
+     "text": "+(101-200) to maximum Energy Shield",
+     "optional": false
+    },
+    {
+     "text": "+(50-100) to maximum Life",
+     "optional": false
+    },
+    {
+     "text": "50% of Maximum Life Converted to Energy Shield",
+     "optional": false
+    }
+   ],
+   "mutatedModifiers": [
+    {
+     "text": "50% of Chaos Damage taken Recouped as Life",
+     "optional": false
+    }
+   ],
+   "flavourText": "Faith springs abundant at the edge of death.",
+   "itemType": "Body Armour",
+   "chaosValue": 10847,
+   "exaltedValue": 1359,
+   "divineValue": 18.0,
+   "count": 1,
+   "detailsId": "foulborn-ghostwrithe-chaos-recoup-silken-vest-6l",
+   "tradeInfo": [
+    {
+     "mod": "explicit.stat_2485226576",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "listingCount": 20
+  },
+  {
+   "id": 134957,
+   "name": "Foulborn Ghostwrithe",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9HaG9zdHdlYXZlIiwidyI6MiwiaCI6Mywic2NhbGUiOjEsIm11dGF0ZWQiOnRydWV9XQ/cacbc0765b/Ghostweave.png",
+   "levelRequired": 11,
+   "baseType": "Silken Vest",
+   "variant": "Life to Shield",
+   "links": 6,
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": -43.22,
+    "data": [
+     0,
+     4.86,
+     30.64,
+     68.21,
+     -22.53,
+     -42.99,
+     -43.22
+    ]
+   },
+   "explicitModifiers": [
+    {
+     "text": "+(103-200) to maximum Energy Shield",
+     "optional": false
+    },
+    {
+     "text": "+(50-100) to maximum Life",
+     "optional": false
+    },
+    {
+     "text": "+50% to Chaos Resistance",
+     "optional": false
+    }
+   ],
+   "mutatedModifiers": [
+    {
+     "text": "Your Maximum Energy Shield is Equal to (35-50)% of Your Maximum Life",
+     "optional": false
+    }
+   ],
+   "flavourText": "Faith springs abundant at the edge of death.",
+   "itemType": "Body Armour",
+   "chaosValue": 9039,
+   "exaltedValue": 1133,
+   "divineValue": 15.0,
+   "count": 19,
+   "detailsId": "foulborn-ghostwrithe-life-to-shield-silken-vest-6l",
+   "tradeInfo": [
+    {
+     "mod": "explicit.stat_4053338379",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "listingCount": 143
+  },
+  {
+   "id": 134988,
+   "name": "Foulborn Ghostwrithe",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9HaG9zdHdlYXZlIiwidyI6MiwiaCI6Mywic2NhbGUiOjEsIm11dGF0ZWQiOnRydWV9XQ/cacbc0765b/Ghostweave.png",
+   "levelRequired": 11,
+   "baseType": "Silken Vest",
+   "variant": "Life to Shield",
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": 137.4,
+    "data": [
+     0,
+     2.5,
+     3.42,
+     98.65,
+     199.7,
+     158.0,
+     137.4
+    ]
+   },
+   "explicitModifiers": [
+    {
+     "text": "+(100-200) to maximum Energy Shield",
+     "optional": false
+    },
+    {
+     "text": "+(50-100) to maximum Life",
+     "optional": false
+    },
+    {
+     "text": "+50% to Chaos Resistance",
+     "optional": false
+    }
+   ],
+   "mutatedModifiers": [
+    {
+     "text": "Your Maximum Energy Shield is Equal to (35-50)% of Your Maximum Life",
+     "optional": false
+    }
+   ],
+   "flavourText": "Faith springs abundant at the edge of death.",
+   "itemType": "Body Armour",
+   "chaosValue": 1627,
+   "exaltedValue": 203.9,
+   "divineValue": 2.7,
+   "count": 28,
+   "detailsId": "foulborn-ghostwrithe-life-to-shield-silken-vest",
+   "tradeInfo": [
+    {
+     "mod": "explicit.stat_4053338379",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "listingCount": 176
+  },
+  {
+   "id": 703,
+   "name": "Kaom's Heart",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9Cb2R5U3RyM0NVbmlxdWUiLCJ3IjoyLCJoIjozLCJzY2FsZSI6MX1d/1027cdf1ad/BodyStr3CUnique.png",
+   "levelRequired": 68,
+   "baseType": "Glorious Plate",
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": -7.99,
+    "data": [
+     0,
+     7.1,
+     7.61,
+     -4.11,
+     -8.69,
+     -8.38,
+     -7.99
+    ]
+   },
+   "implicitModifiers": [
+    {
+     "text": "Item sells for much more to vendors",
+     "optional": true
+    }
+   ],
+   "explicitModifiers": [
+    {
+     "text": "Has no Sockets",
+     "optional": false
+    },
+    {
+     "text": "(20-40)% increased Fire Damage",
+     "optional": true
+    },
+    {
+     "text": "+(500-1000) to maximum Life",
+     "optional": false
+    }
+   ],
+   "flavourText": "The warrior who\nfears will fall.",
+   "itemType": "Body Armour",
+   "chaosValue": 602.6,
+   "exaltedValue": 75.51,
+   "divineValue": 1.0,
+   "count": 65,
+   "detailsId": "kaoms-heart-glorious-plate",
+   "listingCount": 245
+  },
+  {
+   "id": 135496,
+   "name": "Foulborn Ghostwrithe",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9HaG9zdHdlYXZlIiwidyI6MiwiaCI6Mywic2NhbGUiOjEsIm11dGF0ZWQiOnRydWV9XQ/cacbc0765b/Ghostweave.png",
+   "levelRequired": 11,
+   "baseType": "Silken Vest",
+   "variant": "Chaos Recoup, Life to Shield",
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": -12.05,
+    "data": [
+     0,
+     2.5,
+     3.2,
+     0.63,
+     4.71,
+     -1.65,
+     -12.05
+    ]
+   },
+   "explicitModifiers": [
+    {
+     "text": "+(100-200) to maximum Energy Shield",
+     "optional": false
+    },
+    {
+     "text": "+(50-100) to maximum Life",
+     "optional": false
+    }
+   ],
+   "mutatedModifiers": [
+    {
+     "text": "50% of Chaos Damage taken Recouped as Life",
+     "optional": false
+    },
+    {
+     "text": "Your Maximum Energy Shield is Equal to (35-50)% of Your Maximum Life",
+     "optional": false
+    }
+   ],
+   "flavourText": "Faith springs abundant at the edge of death.",
+   "itemType": "Body Armour",
+   "chaosValue": 602.6,
+   "exaltedValue": 75.51,
+   "divineValue": 1.0,
+   "count": 19,
+   "detailsId": "foulborn-ghostwrithe-chaos-recoup-life-to-shield-silken-vest",
+   "tradeInfo": [
+    {
+     "mod": "explicit.stat_2485226576",
+     "min": 0,
+     "max": 0
+    },
+    {
+     "mod": "explicit.stat_4053338379",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "listingCount": 97
+  },
+  {
+   "id": 135091,
+   "name": "Foulborn Ghostwrithe",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9HaG9zdHdlYXZlIiwidyI6MiwiaCI6Mywic2NhbGUiOjEsIm11dGF0ZWQiOnRydWV9XQ/cacbc0765b/Ghostweave.png",
+   "levelRequired": 11,
+   "baseType": "Silken Vest",
+   "variant": "Chaos Recoup",
+   "links": 5,
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": 45.45,
+    "data": [
+     0,
+     0,
+     0,
+     2.27,
+     5627,
+     6081,
+     45.45
+    ]
+   },
+   "explicitModifiers": [
+    {
+     "text": "+(100-200) to maximum Energy Shield",
+     "optional": false
+    },
+    {
+     "text": "+(51-100) to maximum Life",
+     "optional": false
+    },
+    {
+     "text": "50% of Maximum Life Converted to Energy Shield",
+     "optional": false
+    }
+   ],
+   "mutatedModifiers": [
+    {
+     "text": "50% of Chaos Damage taken Recouped as Life",
+     "optional": false
+    }
+   ],
+   "flavourText": "Faith springs abundant at the edge of death.",
+   "itemType": "Body Armour",
+   "chaosValue": 6.4,
+   "exaltedValue": 0.8,
+   "divineValue": 0.01,
+   "count": 5,
+   "detailsId": "foulborn-ghostwrithe-chaos-recoup-silken-vest-5l",
+   "tradeInfo": [
+    {
+     "mod": "explicit.stat_2485226576",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "listingCount": 41
+  },
+  {
+   "id": 1388,
+   "name": "Tabula Rasa",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9UYWJ1bGFSYXNhIiwidyI6MiwiaCI6Mywic2NhbGUiOjF9XQ/3bdbff0756/TabulaRasa.png",
+   "baseType": "Simple Robe",
+   "links": 6,
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": 66.67,
+    "data": [
+     0,
+     0,
+     33.33,
+     46.67,
+     66.67,
+     66.67,
+     66.67
+    ]
+   },
+   "implicitModifiers": [
+    {
+     "text": "Item sells for much more to vendors",
+     "optional": true
+    }
+   ],
+   "itemType": "Body Armour",
+   "chaosValue": 5.0,
+   "exaltedValue": 0.63,
+   "divineValue": 0.01,
+   "count": 75,
+   "detailsId": "tabula-rasa-simple-robe-6l",
+   "listingCount": 925
+  },
+  {
+   "id": 135095,
+   "name": "Foulborn Ghostwrithe",
+   "icon": "https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQXJtb3Vycy9Cb2R5QXJtb3Vycy9HaG9zdHdlYXZlIiwidyI6MiwiaCI6Mywic2NhbGUiOjEsIm11dGF0ZWQiOnRydWV9XQ/cacbc0765b/Ghostweave.png",
+   "levelRequired": 11,
+   "baseType": "Silken Vest",
+   "variant": "Chaos Recoup",
+   "itemClass": 3,
+   "sparkLine": {
+    "totalChange": -83.74,
+    "data": [
+     0,
+     -49.59,
+     -69.11,
+     -83.74,
+     -83.74,
+     -83.74,
+     -83.74
+    ]
+   },
+   "explicitModifiers": [
+    {
+     "text": "+(100-200) to maximum Energy Shield",
+     "optional": false
+    },
+    {
+     "text": "+(50-100) to maximum Life",
+     "optional": false
+    },
+    {
+     "text": "50% of Maximum Life Converted to Energy Shield",
+     "optional": false
+    }
+   ],
+   "mutatedModifiers": [
+    {
+     "text": "50% of Chaos Damage taken Recouped as Life",
+     "optional": false
+    }
+   ],
+   "flavourText": "Faith springs abundant at the edge of death.",
+   "itemType": "Body Armour",
+   "chaosValue": 4.0,
+   "exaltedValue": 0.5,
+   "divineValue": 0.01,
+   "count": 9,
+   "detailsId": "foulborn-ghostwrithe-chaos-recoup-silken-vest",
+   "tradeInfo": [
+    {
+     "mod": "explicit.stat_2485226576",
+     "min": 0,
+     "max": 0
+    }
+   ],
+   "listingCount": 128
+  }
+ ]
+}

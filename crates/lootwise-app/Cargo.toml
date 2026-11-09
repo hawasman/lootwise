@@ -10,7 +10,9 @@ name = "lootwise"
 path = "src/main.rs"
 
 [dependencies]
+lootwise-core = { path = "../lootwise-core" }
 lootwise-input = { path = "../lootwise-input" }
+lootwise-sources = { path = "../lootwise-sources" }
 # Every Rune crate pins this one rev (ADR 0001); bump them together.
 rune = { git = "https://github.com/anomalyco/rune", rev = "6945e51b5a5cad93aa108152fa60b8f51546ea93" }
 rune-kit = { git = "https://github.com/anomalyco/rune", rev = "6945e51b5a5cad93aa108152fa60b8f51546ea93" }

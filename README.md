@@ -7,6 +7,7 @@ A Path of Exile pricing tool that tells a player what their items and stash are 
 | Crate | Holds |
 | --- | --- |
 | `crates/lootwise-core` | The domain engine: clipboard item parsing, Commodity Item classification and Valuation, with `PriceFeed` and `Clock` ports ([README](crates/lootwise-core/README.md)) |
+| `crates/lootwise-sources` | `RelayFeed`, the `PriceFeed` backed by the price relay: downloads the relayed poe.ninja files whose manifest etag changed into a disk cache, at most every 15 minutes, and normalises them for the engine |
 | `crates/lootwise-input` | `KeySender` (Ctrl+C to the focused window, through `enigo`), `PointerLocator`, and `ClipboardCopy`, the save → copy → read → restore sequence of a Price Check |
 | `crates/lootwise-app` | The `lootwise` binary: a tray app on Rune with the Ctrl+D Price Check overlay |
 
@@ -22,14 +23,34 @@ cargo test
 
 ## Running the proof of concept on Linux
 
-The POC does a Price Check without pricing: Ctrl+D over an item in the game shows the item's rarity and name in an overlay beside the pointer.
+Ctrl+D over a Commodity Item in the game shows its Valuation in an overlay beside the pointer: chaos and divine value, listing count (poe.ninja's Currency Exchange prices have none), price age and source, marked **Low confidence** when there are fewer than 10 listings or the prices are over an hour old. Other items show "Not a Commodity Item" (they would need a Live Search, not built yet) or "No price".
 
 Tested setup: KDE Plasma on Wayland, Path of Exile running under Proton (so the game is an XWayland window).
 
-1. Build and start it from a terminal in your Plasma session: `cargo run --release -p lootwise-app`. A gold coin appears in the system tray; its menu has **Quit**.
-2. The first start asks, through KDE's global shortcuts dialog, to allow **Ctrl+D**. Accept it. (Rune registers it through the desktop's GlobalShortcuts portal on Wayland.)
-3. In the game, hover an item and press **Ctrl+D**. Lootwise sends Ctrl+C to the game, reads the item text off the clipboard, puts your previous clipboard back, and shows the rarity and name next to the pointer. Text that isn't an item shows "Not a Path of Exile item".
-4. Close the card with **Ctrl+D** again, or click it and press **Esc**.
+1. Make a local mirror of the price relay (the deployed relay doesn't exist yet). Needs Node 22.18+ and pnpm:
+
+   ```sh
+   cd relay && pnpm install
+   pnpm dev:mirror ~/lootwise-mirror --league Standard   # or your League, e.g. --league @current
+   ```
+
+   Rerun it to refresh prices; Lootwise picks up changed categories within 15 minutes, or on its next start.
+2. Point Lootwise at the folder and start it from a terminal in your Plasma session:
+
+   ```sh
+   LOOTWISE_RELAY=~/lootwise-mirror LOOTWISE_LEAGUE=Standard cargo run --release -p lootwise-app
+   ```
+
+   | Variable | Meaning |
+   | --- | --- |
+   | `LOOTWISE_RELAY` | Required. The relay's `http(s)://` base URL (the folder holding `v1/`), or a local mirror folder. |
+   | `LOOTWISE_LEAGUE` | The League to price in, spelled as poe.ninja does (`Standard`, `Hardcore Settlers`, ...). Default `Standard`. |
+   | `LOOTWISE_CACHE` | Where downloaded prices are kept. Default `~/.local/share/lootwise/relay`. |
+
+   A gold coin appears in the system tray; its menu has **Quit**. If the relay is unreachable, Lootwise prices from its cache, and those Valuations turn low-confidence as they age.
+3. The first start asks, through KDE's global shortcuts dialog, to allow **Ctrl+D**. Accept it. (Rune registers it through the desktop's GlobalShortcuts portal on Wayland.)
+4. In the game, hover an item and press **Ctrl+D**. Lootwise sends Ctrl+C to the game, reads the item text off the clipboard, puts your previous clipboard back, and shows the item's Valuation next to the pointer. Text that isn't an item shows "Not a Path of Exile item".
+5. Close the card with **Ctrl+D** again, or click it and press **Esc**.
 
 ### Known platform limits
 

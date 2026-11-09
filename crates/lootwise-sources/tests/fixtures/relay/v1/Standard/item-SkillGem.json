@@ -1,0 +1,192 @@
+{
+ "lines": [
+  {
+   "id": 112057,
+   "name": "Cleave of Rage",
+   "icon": "https://web.poecdn.com/gen/image/WzMwLDE0LHsiZiI6IjJESXRlbXMvR2Vtcy9DbGVhdmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwiZ2QiOjV9XQ/48d223a640/Cleave.png",
+   "levelRequired": 72,
+   "variant": "21/23c",
+   "itemClass": 4,
+   "sparkLine": {
+    "totalChange": 0,
+    "data": []
+   },
+   "corrupted": true,
+   "gemLevel": 21,
+   "gemQuality": 23,
+   "chaosValue": 2410,
+   "exaltedValue": 302.1,
+   "divineValue": 4.0,
+   "count": 1,
+   "detailsId": "cleave-of-rage-21-23c",
+   "tradeFilter": {
+    "query": {
+     "type": {
+      "option": "Cleave",
+      "discriminator": "alt_x"
+     },
+     "filters": {
+      "misc_filters": {
+       "filters": {
+        "gem_level": {
+         "min": 21
+        },
+        "quality": {
+         "min": 23
+        },
+        "corrupted": {
+         "option": true
+        }
+       }
+      }
+     }
+    }
+   },
+   "listingCount": 21,
+   "metadata": {
+    "gemKind": "transfigured"
+   }
+  },
+  {
+   "id": 111056,
+   "name": "Cleave of Rage",
+   "icon": "https://web.poecdn.com/gen/image/WzMwLDE0LHsiZiI6IjJESXRlbXMvR2Vtcy9DbGVhdmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwiZ2QiOjV9XQ/48d223a640/Cleave.png",
+   "levelRequired": 72,
+   "variant": "21/20c",
+   "itemClass": 4,
+   "sparkLine": {
+    "totalChange": 0,
+    "data": []
+   },
+   "corrupted": true,
+   "gemLevel": 21,
+   "gemQuality": 20,
+   "chaosValue": 299.0,
+   "exaltedValue": 37.47,
+   "divineValue": 0.5,
+   "count": 1,
+   "detailsId": "cleave-of-rage-21-20c",
+   "tradeFilter": {
+    "query": {
+     "type": {
+      "option": "Cleave",
+      "discriminator": "alt_x"
+     },
+     "filters": {
+      "misc_filters": {
+       "filters": {
+        "gem_level": {
+         "min": 21
+        },
+        "quality": {
+         "min": 20
+        },
+        "corrupted": {
+         "option": true
+        }
+       }
+      }
+     }
+    }
+   },
+   "listingCount": 39,
+   "metadata": {
+    "gemKind": "transfigured"
+   }
+  },
+  {
+   "id": 110228,
+   "name": "Cleave of Rage",
+   "icon": "https://web.poecdn.com/gen/image/WzMwLDE0LHsiZiI6IjJESXRlbXMvR2Vtcy9DbGVhdmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwiZ2QiOjV9XQ/48d223a640/Cleave.png",
+   "levelRequired": 70,
+   "variant": "20/20",
+   "itemClass": 4,
+   "sparkLine": {
+    "totalChange": -32.26,
+    "data": [
+     0,
+     0,
+     0,
+     0,
+     -0.65,
+     null,
+     -32.26
+    ]
+   },
+   "gemLevel": 20,
+   "gemQuality": 20,
+   "chaosValue": 52.5,
+   "exaltedValue": 6.58,
+   "divineValue": 0.09,
+   "count": 6,
+   "detailsId": "cleave-of-rage-20-20",
+   "tradeFilter": {
+    "query": {
+     "type": {
+      "option": "Cleave",
+      "discriminator": "alt_x"
+     },
+     "filters": {
+      "misc_filters": {
+       "filters": {
+        "gem_level": {
+         "min": 20
+        },
+        "quality": {
+         "min": 20
+        }
+       }
+      }
+     }
+    }
+   },
+   "listingCount": 59,
+   "metadata": {
+    "gemKind": "transfigured"
+   }
+  },
+  {
+   "id": 111431,
+   "name": "Cleave of Rage",
+   "icon": "https://web.poecdn.com/gen/image/WzMwLDE0LHsiZiI6IjJESXRlbXMvR2Vtcy9DbGVhdmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MSwiZ2QiOjV9XQ/48d223a640/Cleave.png",
+   "levelRequired": 72,
+   "variant": "21c",
+   "itemClass": 4,
+   "sparkLine": {
+    "totalChange": 0,
+    "data": []
+   },
+   "corrupted": true,
+   "gemLevel": 21,
+   "chaosValue": 30.0,
+   "exaltedValue": 3.76,
+   "divineValue": 0.05,
+   "count": 1,
+   "detailsId": "cleave-of-rage-21c",
+   "tradeFilter": {
+    "query": {
+     "type": {
+      "option": "Cleave",
+      "discriminator": "alt_x"
+     },
+     "filters": {
+      "misc_filters": {
+       "filters": {
+        "gem_level": {
+         "min": 21
+        },
+        "corrupted": {
+         "option": true
+        }
+       }
+      }
+     }
+    }
+   },
+   "listingCount": 14,
+   "metadata": {
+    "gemKind": "transfigured"
+   }
+  }
+ ]
+}
