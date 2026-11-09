@@ -62,7 +62,8 @@ poe.ninja reuses some types across endpoints (48 in total, see
 poe.ninja's `/poe1/api/economy/leagues`, the current challenge League. The
 default covers the current challenge League and `Standard`, each every 15
 minutes (poe.ninja refreshes PoE1 overviews about that often). Keep
-`LEAGUE_BY_CRON` keys identical to `triggers.crons`.
+`LEAGUE_BY_CRON` keys identical to `triggers.crons`; a trigger with no entry
+relays nothing and logs an error.
 
 ## Running locally
 
@@ -71,7 +72,7 @@ Node 22.18 or newer and pnpm.
 ```sh
 pnpm install
 pnpm typecheck
-pnpm test                 # vitest in workerd against recorded poe.ninja responses (test/fixtures)
+pnpm test                 # vitest in workerd (@cloudflare/vitest-plugin, the renamed vitest-pool-workers) against recorded poe.ninja responses
 ```
 
 Mirror the relay into a local folder, with no Cloudflare account. This runs
@@ -79,7 +80,7 @@ the same fetch logic against live poe.ninja and writes the same layout (etags
 are MD5, as R2 computes them). Exits non-zero if any category failed.
 
 ```sh
-pnpm dev:mirror ./mirror                    # current League and Standard
+pnpm dev:mirror ./mirror                    # every League in wrangler.toml's LEAGUE_BY_CRON
 pnpm dev:mirror ./mirror --league Standard  # one League; @current also works
 ```
 
@@ -113,7 +114,7 @@ step (ADR 0004).
 | 50 `fetch()` subrequests per invocation   | One League per invocation: 48 categories + 1 leagues lookup = 49. A counter refuses a 51st request and marks the category failed. Redirects are not followed, since each hop is another subrequest; a 3xx is recorded as a failure. |
 | 6 simultaneous connections                | At most 6 requests in flight.                                                                               |
 | 5 cron triggers                           | One trigger per League, so at most 5 Leagues.                                                               |
-| R2 writes (1M Class A ops/month)          | 2 Leagues × 49 writes × 96 runs/day ≈ 9,400/day ≈ 282k/month. Unchanged categories (304) are not rewritten.  |
+| R2 writes (1M Class A ops/month)          | Per run at most 48 category objects + 1 manifest; categories answered 304 are not rewritten. Worst case 2 Leagues × 49 × 96 runs/day ≈ 9,400/day ≈ 282k/month. |
 
 R2 binding calls count against the separate 1,000 internal-service limit, not
 the 50 subrequests.

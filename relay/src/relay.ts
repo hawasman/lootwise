@@ -10,9 +10,6 @@ export const SUBREQUEST_LIMIT = 50;
 /** Configured League value meaning "the current challenge League". */
 export const CURRENT_LEAGUE = "@current";
 
-/** Leagues relayed by default: mirrors `LEAGUE_BY_CRON` in wrangler.toml. */
-export const DEFAULT_LEAGUES = [CURRENT_LEAGUE, "Standard"] as const;
-
 /** Outbound requests in flight at once; Workers allow 6 open connections. */
 const CONCURRENCY = 6;
 
@@ -123,14 +120,15 @@ export async function relayLeague(options: RelayOptions): Promise<Manifest> {
   return manifest;
 }
 
-type Request = (path: string, headers?: Record<string, string>) => Promise<Response>;
+/** A budgeted GET of a poe.ninja path. */
+type PoeNinjaRequest = (path: string, headers?: Record<string, string>) => Promise<Response>;
 
 async function relayCategory(
   category: Category,
   league: string,
   previous: CategoryEntry | undefined,
   store: Store,
-  request: Request,
+  request: PoeNinjaRequest,
   now: () => Date,
 ): Promise<CategoryEntry> {
   const attemptedAt = now().toISOString();
@@ -183,7 +181,7 @@ async function relayCategory(
   }
 }
 
-async function currentLeague(request: Request): Promise<string> {
+async function currentLeague(request: PoeNinjaRequest): Promise<string> {
   const response = await request(LEAGUES_PATH);
   if (response.status !== 200) {
     await response.body?.cancel();

@@ -1,7 +1,9 @@
 // Run the relay's fetch logic against poe.ninja and write the R2 layout to a
 // local folder: `pnpm dev:mirror <dir> [--league <name>]`.
+import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { CURRENT_LEAGUE, DEFAULT_LEAGUES, relayLeague } from "../src/relay.ts";
+import { unstable_readConfig } from "wrangler";
+import { CURRENT_LEAGUE, relayLeague } from "../src/relay.ts";
 import { folderStore } from "./folder-store.ts";
 
 const { positionals, values } = parseArgs({
@@ -14,9 +16,23 @@ if (dir === undefined || positionals.length !== 1) {
   process.exit(2);
 }
 
+/** The Leagues the deployed Worker's cron triggers relay, in trigger order. */
+function configuredLeagues(): string[] {
+  const config = unstable_readConfig({
+    config: fileURLToPath(new URL("../wrangler.toml", import.meta.url)),
+  });
+  const leagueByCron = config.vars["LEAGUE_BY_CRON"] as Record<string, string | undefined>;
+  const crons: string[] = config.triggers.crons ?? [];
+  return crons.map((cron) => {
+    const league = leagueByCron[cron];
+    if (league === undefined) throw new Error(`wrangler.toml: no LEAGUE_BY_CRON entry for "${cron}"`);
+    return league;
+  });
+}
+
 const store = folderStore(dir);
 let failures = 0;
-for (const league of values.league === undefined ? DEFAULT_LEAGUES : [values.league]) {
+for (const league of values.league === undefined ? configuredLeagues() : [values.league]) {
   const manifest = await relayLeague({ league, store, fetch });
   const entries = Object.entries(manifest.categories);
   const failed = entries.filter(([, entry]) => !entry.ok);
