@@ -2,7 +2,7 @@
 //! (Path of Exile runs there under Proton), `GetCursorPos`, `GetAsyncKeyState` and
 //! `MonitorFromPoint` on Windows.
 
-use crate::{Display, Pointer, PointerLocator};
+use crate::{Pointer, PointerDisplay, PointerLocator};
 
 /// Connects on first use, so a missing X display shows up as an unknown pointer rather than a
 /// failed launch.
@@ -58,32 +58,31 @@ impl PointerLocator for SystemPointer {
 
     /// The RandR monitor holding `at`: XWayland lists one per Wayland output, named after its
     /// connector.
-    fn display(&mut self, at: (i32, i32)) -> Option<Display> {
+    fn display(&mut self, at: (i32, i32)) -> Option<PointerDisplay> {
         use x11rb::protocol::randr::ConnectionExt as _;
         use x11rb::protocol::xproto::ConnectionExt as _;
 
         let (conn, root) = self.x()?;
         let monitors = conn.randr_get_monitors(*root, true).ok()?.reply().ok()?;
-        let monitor = monitors.monitors.into_iter().find(|m| {
-            Display {
-                name: None,
-                origin: (m.x.into(), m.y.into()),
-                size: (m.width.into(), m.height.into()),
-                primary: m.primary,
-            }
-            .contains(at)
-        })?;
-        let name = conn
-            .get_atom_name(monitor.name)
+        let (mut display, name) = monitors
+            .monitors
+            .into_iter()
+            .map(|m| {
+                let display = PointerDisplay {
+                    name: None,
+                    origin: (m.x.into(), m.y.into()),
+                    size: (m.width.into(), m.height.into()),
+                    primary: m.primary,
+                };
+                (display, m.name)
+            })
+            .find(|(display, _)| display.contains(at))?;
+        display.name = conn
+            .get_atom_name(name)
             .ok()
             .and_then(|cookie| cookie.reply().ok())
             .and_then(|reply| String::from_utf8(reply.name).ok());
-        Some(Display {
-            name,
-            origin: (monitor.x.into(), monitor.y.into()),
-            size: (monitor.width.into(), monitor.height.into()),
-            primary: monitor.primary,
-        })
+        Some(display)
     }
 }
 
@@ -110,7 +109,7 @@ impl PointerLocator for SystemPointer {
         })
     }
 
-    fn display(&mut self, at: (i32, i32)) -> Option<Display> {
+    fn display(&mut self, at: (i32, i32)) -> Option<PointerDisplay> {
         use windows::Win32::Foundation::POINT;
         use windows::Win32::Graphics::Gdi::{
             GetMonitorInfoW, MONITOR_DEFAULTTONULL, MONITORINFO, MONITORINFOEXW, MonitorFromPoint,
@@ -133,7 +132,7 @@ impl PointerLocator for SystemPointer {
         let rect = info.monitorInfo.rcMonitor;
         let device = &info.szDevice;
         let len = device.iter().position(|&c| c == 0).unwrap_or(device.len());
-        Some(Display {
+        Some(PointerDisplay {
             name: String::from_utf16(&device[..len]).ok(),
             origin: (rect.left, rect.top),
             size: (
@@ -151,7 +150,7 @@ impl PointerLocator for SystemPointer {
         None
     }
 
-    fn display(&mut self, _: (i32, i32)) -> Option<Display> {
+    fn display(&mut self, _: (i32, i32)) -> Option<PointerDisplay> {
         None
     }
 }

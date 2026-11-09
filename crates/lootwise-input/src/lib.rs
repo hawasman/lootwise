@@ -5,7 +5,7 @@
 //! A Price Check sends that keystroke for the player ([`KeySender`]), reads the text, and puts
 //! the player's own clipboard back afterwards ([`ClipboardCopy`]). While its card is shown,
 //! Lootwise samples the pointer ([`PointerLocator`]) to close the card once the player leaves
-//! it, without taking focus from the game; the card opens on the [`Display`] under the pointer.
+//! it, without taking focus from the game; the card opens on the [`PointerDisplay`] under it.
 //! Each is a small interface so tests and other platforms can swap them (ADR 0001: Rune has no
 //! keystroke synthesis or global pointer).
 
@@ -45,9 +45,9 @@ pub struct Pointer {
 }
 
 /// A display as the pointer sees it, in the pointer's global desktop pixels (on Wayland,
-/// XWayland's root coordinates).
+/// XWayland's root coordinates), which needn't be the space the overlay's displays use.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Display {
+pub struct PointerDisplay {
     /// The connector (`HDMI-A-1`) on Linux, the device (`\\.\DISPLAY1`) on Windows.
     pub name: Option<String>,
     /// Its top-left corner.
@@ -57,7 +57,7 @@ pub struct Display {
     pub primary: bool,
 }
 
-impl Display {
+impl PointerDisplay {
     /// Whether `at`, in global desktop pixels, lies on this display.
     pub fn contains(&self, (x, y): (i32, i32)) -> bool {
         let (ox, oy) = (i64::from(self.origin.0), i64::from(self.origin.1));
@@ -71,7 +71,7 @@ pub trait PointerLocator {
     /// `None` when the platform can't say (a Wayland-native window under the pointer).
     fn pointer(&mut self) -> Option<Pointer>;
     /// The display holding `at` (global desktop pixels); `None` when the platform can't say.
-    fn display(&mut self, at: (i32, i32)) -> Option<Display>;
+    fn display(&mut self, at: (i32, i32)) -> Option<PointerDisplay>;
 }
 
 #[cfg(test)]
@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn a_display_holds_the_points_from_its_origin_up_to_its_far_edges() {
-        let right = Display {
+        let right = PointerDisplay {
             name: Some("HDMI-A-1".into()),
             origin: (1920, 0),
             size: (1920, 1080),
@@ -92,7 +92,7 @@ mod tests {
         assert!(!right.contains((1919, 500)), "the display to its left");
         assert!(!right.contains((3840, 500)));
         assert!(!right.contains((2000, 1080)));
-        let left = Display {
+        let left = PointerDisplay {
             origin: (-1920, -200),
             ..right
         };

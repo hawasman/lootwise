@@ -20,7 +20,7 @@
 use std::time::Duration;
 
 use lootwise_core::{Confidence, Item, PriceCheck, Rarity, Valuation};
-use lootwise_input::{ClipboardCopy, KeySender, PointerLocator, Tick};
+use lootwise_input::{ClipboardCopy, KeySender, PointerDisplay, PointerLocator, Tick};
 use rune::{
     ClipboardContent, Color, Cx, Display, DisplayTarget, El, Key, KeyEvent, OverlayHandle, Tx, col,
     el, text,
@@ -62,7 +62,8 @@ pub enum CardContent {
 struct CardPlace {
     /// The pointer, in global desktop pixels; `None` when the platform couldn't say.
     pointer: Option<(i32, i32)>,
-    /// The top-left of the pointer's display, in the same pixels.
+    /// The top-left of the pointer's display, in the same pixels (when the pointer's display
+    /// is unknown, the chosen display's position as Rune lists it).
     origin: (i32, i32),
     /// The display the overlay opens on.
     display: DisplayTarget,
@@ -266,7 +267,7 @@ fn player_left(rect: [f32; 4], (px, py): (f32, f32), just_pressed: bool) -> bool
 /// geometry; with no `under`, the one holding the pointer `at`; else the primary.
 fn card_display(
     displays: &[Display],
-    under: Option<&lootwise_input::Display>,
+    under: Option<&PointerDisplay>,
     at: Option<(i32, i32)>,
 ) -> Option<usize> {
     let by_name = || {
@@ -283,7 +284,7 @@ fn card_display(
     let holding = || {
         let at = at.filter(|_| under.is_none())?;
         displays.iter().position(|d| {
-            lootwise_input::Display {
+            PointerDisplay {
                 name: None,
                 origin: d.position,
                 size: d.size,
@@ -565,7 +566,7 @@ mod tests {
                 pressed: false,
             })
         }
-        fn display(&mut self, _: (i32, i32)) -> Option<lootwise_input::Display> {
+        fn display(&mut self, _: (i32, i32)) -> Option<PointerDisplay> {
             None
         }
     }
@@ -576,7 +577,7 @@ mod tests {
         at: Rc<Cell<(i32, i32)>>,
         pressed: Rc<Cell<bool>>,
         samples: Rc<Cell<u32>>,
-        displays: Vec<lootwise_input::Display>,
+        displays: Vec<PointerDisplay>,
     }
     impl Mouse {
         fn at(x: i32, y: i32) -> Self {
@@ -593,7 +594,7 @@ mod tests {
                 pressed: self.pressed.get(),
             })
         }
-        fn display(&mut self, at: (i32, i32)) -> Option<lootwise_input::Display> {
+        fn display(&mut self, at: (i32, i32)) -> Option<PointerDisplay> {
             self.displays.iter().find(|d| d.contains(at)).cloned()
         }
     }
@@ -1037,8 +1038,8 @@ mod tests {
 
     /// The user's desktop: `HDMI-A-2` at `+0+0` and the primary `HDMI-A-1` at `+1920+0`, both
     /// 1920×1080 at scale 1, as the pointer (XWayland) sees them.
-    fn pointer_displays() -> Vec<lootwise_input::Display> {
-        let display = |name: &str, x, primary| lootwise_input::Display {
+    fn pointer_displays() -> Vec<PointerDisplay> {
+        let display = |name: &str, x, primary| PointerDisplay {
             name: Some(name.into()),
             origin: (x, 0),
             size: (1920, 1080),
