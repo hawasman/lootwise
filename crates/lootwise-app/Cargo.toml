@@ -1,0 +1,16 @@
+[package]
+name = "lootwise-app"
+version = "0.0.1"
+edition.workspace = true
+license.workspace = true
+description = "The Lootwise tray app and its in-game Price Check overlay."
+
+[[bin]]
+name = "lootwise"
+path = "src/main.rs"
+
+[dependencies]
+lootwise-input = { path = "../lootwise-input" }
+# Every Rune crate pins this one rev (ADR 0001); bump them together.
+rune = { git = "https://github.com/anomalyco/rune", rev = "6945e51b5a5cad93aa108152fa60b8f51546ea93" }
+rune-kit = { git = "https://github.com/anomalyco/rune", rev = "6945e51b5a5cad93aa108152fa60b8f51546ea93" }
