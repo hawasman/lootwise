@@ -1,0 +1,10 @@
+Item Class: Divination Cards
+Rarity: Divination Card
+The Doctor
+--------
+Stack Size: 2/8
+--------
+Headhunter
+Leather Belt
+--------
+A fiend that can't be satisfied, a hunger that cannot be sated.

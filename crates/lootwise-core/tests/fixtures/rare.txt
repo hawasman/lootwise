@@ -1,0 +1,15 @@
+Item Class: Rings
+Rarity: Rare
+Storm Loop
+Amethyst Ring
+--------
+Requirements:
+Level: 66
+--------
+Item Level: 83
+--------
++17% to Chaos Resistance (implicit)
+--------
++35 to maximum Life
++42% to Fire Resistance
++28% to Cold Resistance
