@@ -26,8 +26,9 @@ pub const LOW_CONFIDENCE: &str = "Low confidence";
 pub const CARD_SIZE: (f32, f32) = (320.0, 220.0);
 /// The card's offset from the pointer, in points.
 const POINTER_GAP: f32 = 16.0;
-/// Seconds between pointer samples while the card is shown.
-const SAMPLE_EVERY: f64 = 0.05;
+/// Seconds between pointer samples while the card is shown: shorter than a quick click, which
+/// a sample has to land in to be seen. A sample is one XWayland round trip, a few microseconds.
+const SAMPLE_EVERY: f64 = 0.02;
 /// How far from the card, in points, the pointer goes before the card closes: about one card
 /// width, so moving to the next item nearby keeps it.
 const LEAVE_DISTANCE: f32 = CARD_SIZE.0;
@@ -858,9 +859,12 @@ mod tests {
         let before = mouse.samples.get();
         run(&mut rt, 1.0);
         let shown = mouse.samples.get() - before;
+        // The test's frames come every 1/60 s, so a sample lands up to one frame late.
+        let fewest = (1.0 / (SAMPLE_EVERY + 1.0 / 60.0)).floor() as u32;
+        let most = (1.0 / SAMPLE_EVERY).ceil() as u32 + 1;
         assert!(
-            (15..=25).contains(&shown),
-            "about every 50 ms while shown: {shown} in a second"
+            (fewest..=most).contains(&shown),
+            "every {SAMPLE_EVERY} s while shown: {shown} in a second"
         );
 
         rt.key(KeyEvent {
