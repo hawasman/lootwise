@@ -1,9 +1,9 @@
-//! [`KeySender`] and [`PointerLocator`] through `enigo`: XTEST on X11 (and on XWayland, where
-//! Path of Exile runs under Proton), `SendInput` on Windows.
+//! [`KeySender`] through `enigo`: XTEST on X11 (and on XWayland, where Path of Exile runs under
+//! Proton), `SendInput` on Windows.
 
-use enigo::{Direction, Enigo, Key, Keyboard, Mouse, Settings};
+use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 
-use crate::{InputError, KeySender, PointerLocator};
+use crate::{InputError, KeySender};
 
 /// Connects on first use, so a missing X display shows up as a failed Price Check rather than
 /// a failed launch.
@@ -38,11 +38,5 @@ impl KeySender for EnigoInput {
         // Release Ctrl even when the C failed, so the game isn't left with it held.
         enigo.key(Key::Control, Direction::Release).map_err(fail)?;
         copied
-    }
-}
-
-impl PointerLocator for EnigoInput {
-    fn pointer(&mut self) -> Option<(i32, i32)> {
-        self.enigo().ok()?.location().ok()
     }
 }

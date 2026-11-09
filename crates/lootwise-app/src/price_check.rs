@@ -2,13 +2,16 @@
 //!
 //! The overlay covers the display under the pointer, transparent and click-through except for
 //! its card ([`OverlayInput::Regions`]), so the game keeps focus. The card sits next to where the
-//! pointer was when the player pressed Ctrl+D. It takes keys only once the player clicks it
-//! ([`KeyPolicy::OnDemand`]), and then hears Esc alone; Ctrl+D closes it either way.
+//! pointer was when the player pressed Ctrl+D; Ctrl+D again prices the item under the pointer
+//! then and replaces the card. It takes keys only once the player clicks it
+//! ([`KeyPolicy::OnDemand`]), and then hears Esc alone. Since the game keeps focus, the overlay
+//! can't hear the player leave the card; instead it samples the pointer while the card is shown
+//! and closes the card on a mouse button press outside it or once the pointer is far from it.
 
 use std::time::Duration;
 
 use lootwise_core::{Confidence, Item, PriceCheck, Rarity, Valuation};
-use lootwise_input::{ClipboardCopy, KeySender, PointerLocator, Tick};
+use lootwise_input::{ClipboardCopy, KeySender, Pointer, PointerLocator, Tick};
 use rune::{ClipboardContent, Color, Cx, El, Key, KeyEvent, OverlayHandle, Tx, col, el, text};
 use rune_kit::Kit;
 
@@ -23,6 +26,11 @@ pub const LOW_CONFIDENCE: &str = "Low confidence";
 pub const CARD_SIZE: (f32, f32) = (320.0, 220.0);
 /// The card's offset from the pointer, in points.
 const POINTER_GAP: f32 = 16.0;
+/// Seconds between pointer samples while the card is shown.
+const SAMPLE_EVERY: f64 = 0.05;
+/// How far from the card, in points, the pointer goes before the card closes: about one card
+/// width, so moving to the next item nearby keeps it.
+const LEAVE_DISTANCE: f32 = CARD_SIZE.0;
 
 /// Runs a Price Check of clipboard text: the engine, bound to the player's League.
 pub type Pricer = Box<dyn Fn(&str) -> PriceCheck>;
@@ -35,6 +43,14 @@ pub enum CardContent {
     Failed(String),
 }
 
+/// Where the card is: its rect in global points, as the overlay last laid it out, and the
+/// display's scale then.
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct CardBounds {
+    rect: [f32; 4],
+    scale: f32,
+}
+
 /// The overlay's state.
 pub struct PriceCheckOverlay {
     keys: Box<dyn KeySender>,
@@ -42,10 +58,18 @@ pub struct PriceCheckOverlay {
     copy: ClipboardCopy<ClipboardContent>,
     pricer: Pricer,
     card: Option<CardContent>,
-    /// Global desktop pixels, read when the player pressed Ctrl+D.
+    /// Global desktop pixels: where the pointer was when the player pressed Ctrl+D for the
+    /// card shown.
     anchor: Option<(i32, i32)>,
+    /// The same for the Price Check running, until its card replaces the shown one.
+    checking_at: Option<(i32, i32)>,
     /// The overlay's rect in global points, from `on_screen_layout`.
     screen: [f32; 4],
+    bounds: Option<CardBounds>,
+    /// When the pointer is next sampled, while the card is shown.
+    sample_due: Option<f64>,
+    /// Whether a mouse button was held at the last sample, so a press is told from a hold.
+    was_pressed: Option<bool>,
     /// The native overlay, absent in headless runs.
     surface: Option<OverlayHandle<PriceCheckOverlay>>,
 }
@@ -59,7 +83,11 @@ impl PriceCheckOverlay {
             pricer,
             card: None,
             anchor: None,
+            checking_at: None,
             screen: [0.0; 4],
+            bounds: None,
+            sample_due: None,
+            was_pressed: None,
             surface: None,
         }
     }
@@ -71,6 +99,7 @@ impl PriceCheckOverlay {
 
     fn show(&mut self, card: CardContent) {
         self.card = Some(card);
+        self.anchor = self.checking_at.take();
         if let Some(surface) = &self.surface {
             surface.show();
         }
@@ -78,23 +107,21 @@ impl PriceCheckOverlay {
 
     fn hide(&mut self) {
         self.card = None;
+        self.sample_due = None;
+        self.was_pressed = None;
         if let Some(surface) = &self.surface {
             surface.hide();
         }
     }
 }
 
-/// Ctrl+D: close an open card, else start a Price Check of the item under the pointer.
+/// Ctrl+D: start a Price Check of the item under the pointer, whose card replaces any shown.
 pub fn shortcut(s: &mut PriceCheckOverlay, tx: &mut Tx) {
-    if s.card.is_some() {
-        s.hide();
-        return;
-    }
     if !s.copy.begin() {
         return;
     }
     // Before the copy's delays, so a mouse moved meanwhile doesn't drag the card off the item.
-    s.anchor = s.pointer.pointer();
+    s.checking_at = s.pointer.pointer().map(|p| p.at);
     tx.read_clipboard(|s: &mut PriceCheckOverlay, saved, tx| {
         if let Some(due) = s.copy.saved(saved.clone(), tx.clock()) {
             tx.copy("");
@@ -103,9 +130,10 @@ pub fn shortcut(s: &mut PriceCheckOverlay, tx: &mut Tx) {
     });
 }
 
-/// Before every frame and at each deadline the sequence asked for.
+/// Before every frame and at each deadline asked for: steps the copy sequence and, while the
+/// card is shown, watches the pointer.
 pub fn poll(s: &mut PriceCheckOverlay, clock: f64, tx: &mut Tx) -> bool {
-    match s.copy.tick(clock, s.keys.as_mut()) {
+    let copied = match s.copy.tick(clock, s.keys.as_mut()) {
         Tick::Idle => false,
         Tick::WakeAt(due) => {
             tx.wake_at(due);
@@ -125,7 +153,48 @@ pub fn poll(s: &mut PriceCheckOverlay, clock: f64, tx: &mut Tx) -> bool {
             s.show(CardContent::Failed(error.to_string()));
             true
         }
+    };
+    let left = watch_pointer(s, clock, tx);
+    copied || left
+}
+
+/// While the card is shown, samples the pointer every [`SAMPLE_EVERY`] and closes the card
+/// once the player leaves it. Says whether it closed it.
+fn watch_pointer(s: &mut PriceCheckOverlay, clock: f64, tx: &mut Tx) -> bool {
+    if s.card.is_none() {
+        return false;
     }
+    let due = *s.sample_due.get_or_insert(clock);
+    if clock < due {
+        tx.wake_at(due);
+        return false;
+    }
+    s.sample_due = Some(clock + SAMPLE_EVERY);
+    tx.wake_at(clock + SAMPLE_EVERY);
+    let Some(pointer) = s.pointer.pointer() else {
+        return false;
+    };
+    let pressed = pointer.pressed && s.was_pressed == Some(false);
+    s.was_pressed = Some(pointer.pressed);
+    if s.bounds
+        .is_some_and(|card| player_left(card, pointer, pressed))
+    {
+        s.hide();
+        return true;
+    }
+    false
+}
+
+/// Whether the player has left the card: pressed a mouse button outside it (`pressed`: a
+/// button went down since the last sample), or moved the pointer beyond [`LEAVE_DISTANCE`].
+fn player_left(card: CardBounds, pointer: Pointer, pressed: bool) -> bool {
+    let scale = if card.scale > 0.0 { card.scale } else { 1.0 };
+    let (px, py) = (pointer.at.0 as f32 / scale, pointer.at.1 as f32 / scale);
+    let [x, y, w, h] = card.rect;
+    let dx = (x - px).max(px - (x + w)).max(0.0);
+    let dy = (y - py).max(py - (y + h)).max(0.0);
+    let distance = dx.hypot(dy);
+    distance > LEAVE_DISTANCE || (pressed && distance > 0.0)
 }
 
 /// The overlay's keys, once it has them: Esc closes the card, everything else passes.
@@ -311,7 +380,8 @@ pub fn view(s: &PriceCheckOverlay, cx: &mut Cx<PriceCheckOverlay>) -> El {
     let Some(card) = &s.card else { return root };
     let k = Kit::neutral(true);
     let (accent, body) = card_body(card, &k);
-    let (x, y) = card_origin(s.anchor, cx.env().scale, s.screen);
+    let scale = cx.env().scale;
+    let (x, y) = card_origin(s.anchor, scale, s.screen);
     let card = rune_kit::Card::new().accent(accent).child(body).build(&k);
     root.child(
         el().key("card")
@@ -321,6 +391,10 @@ pub fn view(s: &PriceCheckOverlay, cx: &mut Cx<PriceCheckOverlay>) -> El {
             .border(1.0, k.c.border_base)
             .absolute(x, y)
             .hit()
+            // Where the player's pointer is measured from, to close the card once they leave.
+            .on_screen_layout(move |s: &mut PriceCheckOverlay, rect| {
+                s.bounds = Some(CardBounds { rect, scale });
+            })
             // A click hands the card the keyboard, so Esc reaches it.
             .on_press(|s: &mut PriceCheckOverlay| {
                 if let Some(surface) = &s.surface {
@@ -345,23 +419,49 @@ mod tests {
 
     const SAMPLE: &str = "Item Class: Rings\nRarity: Rare\nDoom Loop\nTwo-Stone Ring\n--------\nRequirements:\nLevel: 32\n--------\nItem Level: 84\n";
 
-    /// Stands in for the game: Ctrl+C puts `copies` on the clipboard.
+    /// Stands in for the game: Ctrl+C puts what `copies` holds then on the clipboard.
     struct FakeGame {
         clipboard: MemoryClipboard,
-        copies: &'static str,
+        copies: Rc<Cell<&'static str>>,
         presses: Rc<Cell<u32>>,
     }
     impl KeySender for FakeGame {
         fn send_copy(&mut self) -> Result<(), InputError> {
             self.presses.set(self.presses.get() + 1);
-            self.clipboard.set_text(self.copies);
+            self.clipboard.set_text(self.copies.get());
             Ok(())
         }
     }
     struct FakePointer;
     impl PointerLocator for FakePointer {
-        fn pointer(&mut self) -> Option<(i32, i32)> {
-            Some((400, 300))
+        fn pointer(&mut self) -> Option<Pointer> {
+            Some(Pointer {
+                at: (400, 300),
+                pressed: false,
+            })
+        }
+    }
+    /// A pointer the test moves and presses, counting how often the overlay samples it.
+    #[derive(Clone, Default)]
+    struct Mouse {
+        at: Rc<Cell<(i32, i32)>>,
+        pressed: Rc<Cell<bool>>,
+        samples: Rc<Cell<u32>>,
+    }
+    impl Mouse {
+        fn at(x: i32, y: i32) -> Self {
+            let mouse = Self::default();
+            mouse.at.set((x, y));
+            mouse
+        }
+    }
+    impl PointerLocator for Mouse {
+        fn pointer(&mut self) -> Option<Pointer> {
+            self.samples.set(self.samples.get() + 1);
+            Some(Pointer {
+                at: self.at.get(),
+                pressed: self.pressed.get(),
+            })
         }
     }
 
@@ -426,8 +526,18 @@ mod tests {
         keys: Box<dyn KeySender>,
         pricer: Pricer,
     ) -> Runtime<PriceCheckOverlay> {
+        runtime_with(clipboard, keys, Box::new(FakePointer), pricer)
+    }
+
+    /// The same with `pointer` in place of the player's mouse.
+    fn runtime_with(
+        clipboard: &MemoryClipboard,
+        keys: Box<dyn KeySender>,
+        pointer: Box<dyn PointerLocator>,
+        pricer: Pricer,
+    ) -> Runtime<PriceCheckOverlay> {
         let mut rt = Runtime::new(
-            PriceCheckOverlay::new(keys, Box::new(FakePointer), pricer),
+            PriceCheckOverlay::new(keys, pointer, pricer),
             view,
             (1920.0, 1080.0),
             Env::new(true, 1.0),
@@ -442,7 +552,7 @@ mod tests {
         let presses = Rc::new(Cell::new(0));
         let game = FakeGame {
             clipboard: clipboard.clone(),
-            copies,
+            copies: Rc::new(Cell::new(copies)),
             presses: presses.clone(),
         };
         (Box::new(game), presses)
@@ -625,15 +735,128 @@ mod tests {
         );
     }
 
+    /// The overlay with a [`Mouse`] at (400, 300), and the game copying what the returned cell
+    /// holds.
+    fn watched(
+        clipboard: &MemoryClipboard,
+        copies: &'static str,
+    ) -> (Runtime<PriceCheckOverlay>, Mouse, Rc<Cell<&'static str>>) {
+        let mouse = Mouse::at(400, 300);
+        let copies = Rc::new(Cell::new(copies));
+        let game = FakeGame {
+            clipboard: clipboard.clone(),
+            copies: copies.clone(),
+            presses: Rc::default(),
+        };
+        let rt = runtime_with(clipboard, Box::new(game), Box::new(mouse.clone()), pricer());
+        (rt, mouse, copies)
+    }
+
+    /// Where the card is drawn, in points: beside (400, 300), so its left edge is at 416.
+    fn card_at(rt: &Runtime<PriceCheckOverlay>) -> Option<(f32, f32)> {
+        rt.presented("card").map(|(rect, _)| (rect[0], rect[1]))
+    }
+
+    fn click(rt: &mut Runtime<PriceCheckOverlay>, mouse: &Mouse, at: (i32, i32)) {
+        mouse.at.set(at);
+        run(rt, 0.1);
+        mouse.pressed.set(true);
+        run(rt, 0.1);
+        mouse.pressed.set(false);
+        run(rt, 0.1);
+    }
+
     #[test]
-    fn ctrl_d_again_closes_the_card() {
+    fn ctrl_d_while_a_card_is_shown_replaces_it_with_the_new_items_valuation() {
         let clipboard = rune::clipboard::memory();
-        let (mut rt, presses) = overlay(&clipboard, SAMPLE);
+        let (mut rt, mouse, copies) = watched(&clipboard, UNIQUE);
+        press_ctrl_d(&mut rt);
+        assert_eq!(text_of(&rt, "item-name").as_deref(), Some("Kaom's Heart"));
+
+        mouse.at.set((450, 320));
+        copies.set(DIVINE);
+        press_ctrl_d(&mut rt);
+        assert_eq!(text_of(&rt, "item-name").as_deref(), Some("Divine Orb"));
+        assert_eq!(text_of(&rt, "chaos").as_deref(), Some("200 chaos"));
+        run(&mut rt, 1.0);
+        assert_eq!(
+            card_at(&rt),
+            Some((466.0, 336.0)),
+            "moved beside the new item"
+        );
+    }
+
+    #[test]
+    fn a_press_outside_the_card_closes_it() {
+        let clipboard = rune::clipboard::memory();
+        let (mut rt, mouse, _) = watched(&clipboard, UNIQUE);
         press_ctrl_d(&mut rt);
         assert!(rt.state.card.is_some());
-        press_ctrl_d(&mut rt);
+        // Left of the card, nearer than the distance that closes it on its own.
+        click(&mut rt, &mouse, (300, 330));
         assert_eq!(rt.state.card, None);
-        assert_eq!(presses.get(), 1, "closing sends no Ctrl+C");
+        assert_eq!(text_of(&rt, "item-name"), None, "the card is gone");
+    }
+
+    #[test]
+    fn a_press_inside_the_card_keeps_it() {
+        let clipboard = rune::clipboard::memory();
+        let (mut rt, mouse, _) = watched(&clipboard, UNIQUE);
+        press_ctrl_d(&mut rt);
+        click(&mut rt, &mouse, (500, 350));
+        assert!(rt.state.card.is_some());
+    }
+
+    #[test]
+    fn a_button_held_since_before_the_card_opened_is_not_a_press() {
+        // The player keeps the left button down to walk while pressing Ctrl+D.
+        let clipboard = rune::clipboard::memory();
+        let (mut rt, mouse, _) = watched(&clipboard, UNIQUE);
+        mouse.pressed.set(true);
+        press_ctrl_d(&mut rt);
+        mouse.at.set((300, 330));
+        run(&mut rt, 0.2);
+        assert!(rt.state.card.is_some());
+    }
+
+    #[test]
+    fn moving_beyond_about_a_card_width_from_the_card_closes_it() {
+        let clipboard = rune::clipboard::memory();
+        let (mut rt, mouse, _) = watched(&clipboard, UNIQUE);
+        press_ctrl_d(&mut rt);
+        // The card spans x 416..736.
+        mouse.at.set((1000, 330));
+        run(&mut rt, 0.2);
+        assert!(rt.state.card.is_some(), "264 points away");
+        mouse.at.set((1070, 330));
+        run(&mut rt, 0.2);
+        assert_eq!(rt.state.card, None, "334 points away");
+    }
+
+    #[test]
+    fn the_pointer_is_sampled_only_while_the_card_is_shown() {
+        let clipboard = rune::clipboard::memory();
+        let (mut rt, mouse, _) = watched(&clipboard, UNIQUE);
+        run(&mut rt, 1.0);
+        assert_eq!(mouse.samples.get(), 0, "before any card");
+
+        press_ctrl_d(&mut rt);
+        let before = mouse.samples.get();
+        run(&mut rt, 1.0);
+        let shown = mouse.samples.get() - before;
+        assert!(
+            (15..=25).contains(&shown),
+            "about every 50 ms while shown: {shown} in a second"
+        );
+
+        rt.key(KeyEvent {
+            key: Key::Escape,
+            mods: Mods::default(),
+        });
+        run(&mut rt, 0.1);
+        let hidden = mouse.samples.get();
+        run(&mut rt, 1.0);
+        assert_eq!(mouse.samples.get(), hidden, "none once hidden");
     }
 
     #[test]
@@ -659,31 +882,11 @@ mod tests {
 
     #[test]
     fn the_card_stays_where_ctrl_d_was_pressed_when_the_mouse_moves_during_the_copy() {
-        struct Mouse(Rc<Cell<(i32, i32)>>);
-        impl PointerLocator for Mouse {
-            fn pointer(&mut self) -> Option<(i32, i32)> {
-                Some(self.0.get())
-            }
-        }
         let clipboard = rune::clipboard::memory();
-        let at = Rc::new(Cell::new((400, 300)));
-        let game = FakeGame {
-            clipboard: clipboard.clone(),
-            copies: SAMPLE,
-            presses: Rc::default(),
-        };
-        let mut rt = Runtime::new(
-            PriceCheckOverlay::new(Box::new(game), Box::new(Mouse(at.clone())), pricer()),
-            view,
-            (1920.0, 1080.0),
-            Env::new(true, 1.0),
-        );
-        rt.use_clipboard(&clipboard);
-        rt.frame(0.0);
+        let (mut rt, mouse, _) = watched(&clipboard, SAMPLE);
         rt.update(shortcut);
-        at.set((900, 700));
+        mouse.at.set((900, 700));
         run(&mut rt, 0.5);
-        let card = rt.presented("card").map(|(rect, _)| (rect[0], rect[1]));
-        assert_eq!(card, Some((416.0, 316.0)));
+        assert_eq!(card_at(&rt), Some((416.0, 316.0)));
     }
 }

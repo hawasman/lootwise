@@ -1753,6 +1753,8 @@ name = "lootwise-input"
 version = "0.0.1"
 dependencies = [
  "enigo",
+ "windows 0.61.3",
+ "x11rb",
 ]
 
 [[package]]

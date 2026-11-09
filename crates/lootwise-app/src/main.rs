@@ -18,7 +18,7 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 
 use lootwise_core::{Clock, Engine, League};
-use lootwise_input::EnigoInput;
+use lootwise_input::{EnigoInput, SystemPointer};
 use lootwise_sources::{RelayFeed, RelaySource, default_cache_dir};
 use price_check::PriceCheckOverlay;
 use rune::{
@@ -99,7 +99,6 @@ fn main() {
     });
     #[cfg(target_os = "linux")]
     app_id::establish();
-    let input = || Box::new(EnigoInput::new());
     let mut app = App::new(AppSpec::new(
         "Lootwise",
         (320.0, 200.0),
@@ -122,7 +121,11 @@ fn main() {
         })
         .poll(price_check::poll)
         .on_key(price_check::on_key),
-        PriceCheckOverlay::new(input(), input(), pricer),
+        PriceCheckOverlay::new(
+            Box::new(EnigoInput::new()),
+            Box::new(SystemPointer::new()),
+            pricer,
+        ),
     );
     let surface = overlay.clone();
     overlay.update(move |s, _| s.attach(surface));

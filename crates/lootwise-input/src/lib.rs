@@ -1,17 +1,22 @@
-//! Input Lootwise sends to the game, and the clipboard sequence a Price Check runs.
+//! Input Lootwise sends to the game, the pointer it watches, and the clipboard sequence a Price
+//! Check runs.
 //!
 //! Path of Exile puts an item's text on the clipboard when the player presses Ctrl+C over it.
 //! A Price Check sends that keystroke for the player ([`KeySender`]), reads the text, and puts
-//! the player's own clipboard back afterwards ([`ClipboardCopy`]). Both are small interfaces so
-//! tests and other platforms can swap them (ADR 0001: Rune has no keystroke synthesis).
+//! the player's own clipboard back afterwards ([`ClipboardCopy`]). While its card is shown,
+//! Lootwise samples the pointer ([`PointerLocator`]) to close the card once the player leaves
+//! it, without taking focus from the game. Each is a small interface so tests and other
+//! platforms can swap them (ADR 0001: Rune has no keystroke synthesis or global pointer).
 
 mod copy;
 mod enigo_input;
+mod pointer;
 
 pub use copy::{CLEAR_SETTLE, COPY_WAIT, ClipboardCopy, Tick};
 pub use enigo_input::EnigoInput;
+pub use pointer::SystemPointer;
 
-/// Why a keystroke or pointer query failed.
+/// Why a keystroke failed.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InputError(pub String);
 
@@ -29,8 +34,17 @@ pub trait KeySender {
     fn send_copy(&mut self) -> Result<(), InputError>;
 }
 
-/// Where the mouse pointer is, in global desktop pixels.
+/// The mouse pointer at one moment.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Pointer {
+    /// Where it is, in global desktop pixels.
+    pub at: (i32, i32),
+    /// Whether a mouse button (left, right, middle or a side button) is held down.
+    pub pressed: bool,
+}
+
+/// Samples the mouse pointer.
 pub trait PointerLocator {
     /// `None` when the platform can't say (a Wayland-native window under the pointer).
-    fn pointer(&mut self) -> Option<(i32, i32)>;
+    fn pointer(&mut self) -> Option<Pointer>;
 }
