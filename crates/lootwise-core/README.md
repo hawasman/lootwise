@@ -15,7 +15,7 @@ match engine.price_check(&League::new("Settlers"), clipboard_text) {
 ```
 
 - **Parsing** (`parse_item`): PoE1 English clipboard text (`Item Class:` / `Rarity:` / `--------`). Reads item class, rarity, name, base type (identified rares and uniques only), stack size, gem level, gem quality and corruption. Transfigured gems keep their transfigured name. Anything else is `NotAnItem`.
-- **Commodity Items** (`CommodityItem::classify`): currency, fragments, scarabs, essences, divination cards, skill gems (name + level + quality + corrupted) and identified uniques (name + base type). Everything else, including rares, magic items and unidentified uniques, is not a Commodity Item.
+- **Commodity Items** (`CommodityItem::classify`): currency, fragments (including splinters), scarabs, essences, divination cards, skill gems (name + level + quality + corrupted) and identified uniques (name + base type). Everything else, including rares, magic items and unidentified uniques, is not a Commodity Item.
 - **Valuation**: chaos value per unit (the stored unit), divine value at the League's divine rate, source, age of the feed data, listing count and confidence. Confidence is `Low` when there are fewer than 10 listings or the data is older than 1 hour.
 
 ## Ports

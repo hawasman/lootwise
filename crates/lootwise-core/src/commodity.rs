@@ -41,6 +41,9 @@ impl CommodityItem {
     pub fn classify(item: &Item) -> Option<Self> {
         let name = item.name.clone();
         match (item.rarity, item.item_class.as_str()) {
+            (Rarity::Currency, "Stackable Currency") if is_splinter(&name) => {
+                Some(Self::Fragment { name })
+            }
             (Rarity::Currency, "Stackable Currency") if is_essence(&name) => {
                 Some(Self::Essence { name })
             }
@@ -65,4 +68,10 @@ impl CommodityItem {
 
 fn is_essence(name: &str) -> bool {
     name.contains("Essence of") || name == "Remnant of Corruption"
+}
+
+/// Splinters (`Splinter of Xoph`, `Timeless Karui Splinter`) stack like currency but are
+/// fragments: pieces of a Map Fragment.
+fn is_splinter(name: &str) -> bool {
+    name.contains("Splinter")
 }

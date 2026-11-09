@@ -447,3 +447,41 @@ fn windows_line_endings_parse_the_same() {
 
     assert_eq!(valuation.item, divine_orb());
 }
+
+#[test]
+fn unidentified_unique_is_not_a_commodity_item() {
+    let unidentified = "Item Class: Body Armours\nRarity: Unique\nSimple Robe\n--------\nItem Level: 84\n--------\nUnidentified\n";
+    let tabula = CommodityItem::Unique {
+        name: "Tabula Rasa".into(),
+        base_type: "Simple Robe".into(),
+    };
+    let check = check_with(
+        &settlers(),
+        tabula,
+        entry(12.0, 900, t0()),
+        t0(),
+        unidentified,
+    );
+
+    assert!(
+        matches!(check, PriceCheck::NotACommodityItem { .. }),
+        "got {check:?}"
+    );
+}
+
+#[test]
+fn splinter_is_a_fragment() {
+    let splinter = "Item Class: Stackable Currency\nRarity: Currency\nSplinter of Xoph\n--------\nStack Size: 37/100\n--------\nCombine 100 Splinters to create Xoph's Breachstone.\n";
+    let key = CommodityItem::Fragment {
+        name: "Splinter of Xoph".into(),
+    };
+    let valuation = valued(check_with(
+        &settlers(),
+        key.clone(),
+        entry(1.5, 200, t0()),
+        t0(),
+        splinter,
+    ));
+
+    assert_eq!(valuation.item, key);
+}
